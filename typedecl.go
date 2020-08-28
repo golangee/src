@@ -79,7 +79,17 @@ func (t *TypeDecl) onAttach(parent FileProvider) {
 	}
 }
 
-func (t TypeDecl) Emit(w Writer) {
+// Qualifier of the type declaration.
+func (t *TypeDecl) Qualifier() Qualifier {
+	return t.qualifier
+}
+
+// Params are the generic parameters.
+func (t *TypeDecl) Params() []*TypeDecl {
+	return t.params
+}
+
+func (t *TypeDecl) Emit(w Writer) {
 	base := t.parent.File().Use(t.qualifier)
 	w.Printf(base)
 	w.Printf(" ")
