@@ -17,7 +17,8 @@ package src
 import "strings"
 
 type FuncBuilder struct {
-	parent        *TypeBuilder
+	parent        FileProvider
+	parentType    *TypeBuilder
 	doc           string
 	name          string
 	recName       string
@@ -85,11 +86,14 @@ func (b *FuncBuilder) File() *FileBuilder {
 	return b.parent.File()
 }
 
-func (b *FuncBuilder) onAttach(parent *TypeBuilder) {
+func (b *FuncBuilder) onAttach(parent FileProvider) {
 	b.parent = parent
+	if parent, ok := parent.(*TypeBuilder); ok {
+		b.parentType = parent
 
-	if b.recName == "" && len(parent.name) > 0 {
-		b.recName = strings.ToLower(parent.name[0:1])
+		if b.recName == "" && len(parent.name) > 0 {
+			b.recName = strings.ToLower(parent.name[0:1])
+		}
 	}
 }
 
@@ -116,7 +120,7 @@ func (b *FuncBuilder) SetDoc(doc string) *FuncBuilder {
 func (b *FuncBuilder) Emit(w Writer) {
 	emitDoc(w, b.name, b.doc)
 
-	if b.parent != nil && b.parent.iType == typeInterface {
+	if b.parentType != nil && b.parentType.iType == typeInterface {
 		w.Printf("%s(", b.name)
 		for i, p := range b.params {
 			if i == len(b.params)-1 && b.variadic {
@@ -139,12 +143,12 @@ func (b *FuncBuilder) Emit(w Writer) {
 	}
 
 	w.Printf("func ")
-	if b.parent != nil {
+	if b.parentType != nil {
 		ptrRec := ""
 		if b.isPtrReceiver {
 			ptrRec = "*"
 		}
-		w.Printf("(%s %s%s) ", b.recName, ptrRec, b.parent.name)
+		w.Printf("(%s %s%s) ", b.recName, ptrRec, b.parentType.name)
 	}
 
 	w.Printf("%s(", b.name)

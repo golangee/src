@@ -35,6 +35,10 @@ func TestDSL(t *testing.T) {
 
 				NewIntEnum("Status", "unknown", "running", "stopped").SetDoc("...is an enum test."),
 				NewStringEnum("Status2", "unknown", "running", "stopped").SetDoc("...is an enum test."),
-			).String(),
+			).
+			AddFuncs(
+				NewFunc("MyPkgFunc"),
+			).
+			String(),
 	)
 }

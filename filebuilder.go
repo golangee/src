@@ -22,9 +22,14 @@ import (
 type FileBuilder struct {
 	namedImports map[string]string // path => named import alias
 	types        []*TypeBuilder
+	funcs        []*FuncBuilder
 	pkgName      string
 	genHeader    string
 	doc          string
+}
+
+func (b *FileBuilder) File() *FileBuilder {
+	return b
 }
 
 func NewFile(pkgName string) *FileBuilder {
@@ -35,6 +40,15 @@ func (b *FileBuilder) AddTypes(types ...*TypeBuilder) *FileBuilder {
 	b.types = append(b.types, types...)
 	for _, t := range types {
 		t.onAttach(b)
+	}
+
+	return b
+}
+
+func (b *FileBuilder) AddFuncs(funcs ...*FuncBuilder) *FileBuilder {
+	b.funcs = append(b.funcs, funcs...)
+	for _, builder := range funcs {
+		builder.onAttach(b)
 	}
 
 	return b
@@ -95,6 +109,10 @@ func (b *FileBuilder) Emit(w Writer) {
 
 	tmp := &BufferedWriter{}
 	for _, t := range b.types {
+		t.Emit(tmp)
+	}
+
+	for _, t := range b.funcs {
 		t.Emit(tmp)
 	}
 
