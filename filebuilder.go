@@ -26,14 +26,20 @@ type FileBuilder struct {
 	pkgName      string
 	genHeader    string
 	doc          string
+	importPath   string //optional, will help to avoid illegal self imports
+}
+
+func NewFile(pkgName string) *FileBuilder {
+	return &FileBuilder{namedImports: map[string]string{}, pkgName: pkgName}
 }
 
 func (b *FileBuilder) File() *FileBuilder {
 	return b
 }
 
-func NewFile(pkgName string) *FileBuilder {
-	return &FileBuilder{namedImports: map[string]string{}, pkgName: pkgName}
+func (b *FileBuilder) SetImportPath(path string) *FileBuilder {
+	b.importPath = path
+	return b
 }
 
 func (b *FileBuilder) AddTypes(types ...*TypeBuilder) *FileBuilder {
@@ -69,6 +75,11 @@ func (b *FileBuilder) Use(q Qualifier) string {
 
 	if b == nil {
 		return string(q)
+	}
+
+	// fix illegal self-imports, if we can
+	if b.importPath != "" && strings.HasPrefix(string(q), b.importPath+".") {
+		return q.Name()
 	}
 
 	if name, has := b.namedImports[q.Path()]; has {
