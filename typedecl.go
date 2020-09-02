@@ -68,6 +68,19 @@ func NewErrorDecl() *TypeDecl {
 	return NewTypeDecl("error")
 }
 
+// Clones performs a deep copy but without a parent
+func (t *TypeDecl) Clone() *TypeDecl {
+	c := &TypeDecl{
+		qualifier: t.qualifier,
+	}
+
+	for _, param := range t.params {
+		c.params = append(c.params, param.Clone())
+	}
+
+	return c
+}
+
 func (t *TypeDecl) onAttach(parent FileProvider) {
 	if t == nil {
 		return
