@@ -22,9 +22,10 @@ import "strconv"
 //   []int: TypeDecl{qualifier:"[]",params:[]TypeDecl{qualifier:"int"}}
 //     is equal to NewSliceDecl("int")
 type TypeDecl struct {
-	qualifier Qualifier
-	params    []*TypeDecl
-	parent    FileProvider
+	qualifier                 Qualifier
+	params                    []*TypeDecl
+	parent                    FileProvider
+	funcParams, funcRetParams []*Parameter
 }
 
 func NewCallDecl(qualifier Qualifier) *TypeDecl {
@@ -66,6 +67,13 @@ func NewPointerDecl(t *TypeDecl) *TypeDecl {
 
 func NewErrorDecl() *TypeDecl {
 	return NewTypeDecl("error")
+}
+
+func NewFuncDecl(params []*Parameter, returns []*Parameter) *TypeDecl {
+	d := NewGenericDecl("func")
+	d.funcParams = params
+	d.funcRetParams = returns
+	return d
 }
 
 // Clones performs a deep copy but without a parent
@@ -112,6 +120,23 @@ func (t *TypeDecl) Emit(w Writer) {
 		t.params[0].Emit(w)
 		w.Printf("]")
 		t.params[1].Emit(w)
+	case "func":
+		w.Printf("(")
+		for i, p := range t.funcParams {
+			p.Emit(w)
+			if i < len(t.funcParams)-1 {
+				w.Printf(", ")
+			}
+		}
+		w.Printf(") (")
+		for i, p := range t.funcRetParams {
+			p.Emit(w)
+			if i < len(t.funcRetParams)-1 {
+				w.Printf(", ")
+			}
+		}
+		w.Printf(")")
+
 	default:
 		for _, p := range t.params {
 			p.Emit(w)

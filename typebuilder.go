@@ -197,6 +197,7 @@ func (b *TypeBuilder) Doc() string {
 	return b.doc
 }
 
+
 func (b *TypeBuilder) Name() string {
 	return b.name
 }

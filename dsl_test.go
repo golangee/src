@@ -41,4 +41,26 @@ func TestDSL(t *testing.T) {
 			).
 			String(),
 	)
+
+	myIface := NewInterface("BookRepo").
+		AddMethods(
+			NewFunc("ReadAll").
+				SetDoc("... tries to read all entities.").
+				AddParams(
+					NewParameter("offset", NewTypeDecl("int")),
+					NewParameter("limit", NewTypeDecl("int64")),
+				).
+				AddResults(
+					NewParameter("", NewSliceDecl(NewTypeDecl("Book"))),
+					NewParameter("", NewTypeDecl("error")),
+				),
+		)
+
+	fmt.Println(
+		NewFile("testiface").
+			AddTypes(
+				Implement(myIface, true),
+				ImplementMock(myIface),
+			),
+	)
 }

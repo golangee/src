@@ -35,6 +35,10 @@ func NewFunc(name string) *FuncBuilder {
 	return b
 }
 
+func (b *FuncBuilder) Doc() string {
+	return b.doc
+}
+
 func (b *FuncBuilder) Name() string {
 	return b.name
 }
@@ -105,6 +109,10 @@ func (b *FuncBuilder) SetName(name string) *FuncBuilder {
 func (b *FuncBuilder) SetReceiverName(name string) *FuncBuilder {
 	b.recName = name
 	return b
+}
+
+func (b *FuncBuilder) ReceiverName() string {
+	return b.recName
 }
 
 func (b *FuncBuilder) SetPointerReceiver(isPtrRec bool) *FuncBuilder {
