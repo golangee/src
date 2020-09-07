@@ -57,7 +57,7 @@ func ImplementMock(iface *TypeBuilder) *TypeBuilder {
 
 		fun.AddBody(NewBlock().
 			If(fun.ReceiverName()+"."+fieldName+"!=nil",
-				NewBlock().Add("return ", fun.ReceiverName(), ".", fun.Name(), "(", callParamList, ")"),
+				NewBlock().Add("return ", fun.ReceiverName(), ".", fieldName, "(", callParamList, ")"),
 			).
 			AddLine("panic(\"mock not available: " + fun.Name() + "\")"),
 		)
