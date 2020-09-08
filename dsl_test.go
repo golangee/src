@@ -65,4 +65,13 @@ func TestDSL(t *testing.T) {
 	)
 
 	fmt.Println(NewSliceDecl(NewTypeDecl("net/http.Response")))
+
+	fmt.Println(
+		NewFile("testiface").AddTypes(
+			NewInterface("ReaderWriter").
+				AddEmbedded(
+					NewTypeDecl("io.Writer"),
+					NewTypeDecl("io.Reader"),
+				)),
+	)
 }

@@ -35,6 +35,7 @@ type TypeBuilder struct {
 	enumValues []string
 	consts     []*Const //associated constants
 	vars       []*Var   //associated variables
+	embedded   []*TypeDecl
 }
 
 func NewType() *TypeBuilder {
@@ -155,6 +156,16 @@ func (b *TypeBuilder) Constants() []*Const {
 	return b.consts
 }
 
+// AddEmbedded just appends embeddable types for structs and interfaces.
+func (b *TypeBuilder) AddEmbedded(types ...*TypeDecl) *TypeBuilder {
+	b.embedded = append(b.embedded, types...)
+	for _, decl := range types {
+		decl.onAttach(b)
+	}
+
+	return b
+}
+
 // AddConst adds associated constant declarations
 func (b *TypeBuilder) AddConstants(constExpr ...*Const) *TypeBuilder {
 	b.consts = append(b.consts, constExpr...)
@@ -197,7 +208,6 @@ func (b *TypeBuilder) Doc() string {
 	return b.doc
 }
 
-
 func (b *TypeBuilder) Name() string {
 	return b.name
 }
@@ -237,9 +247,16 @@ func (b *TypeBuilder) Emit(w Writer) {
 	switch b.iType {
 	case typeStruct:
 		w.Printf(" struct {\n")
+
+		for _, e := range b.embedded {
+			e.Emit(w)
+			w.Printf("\n")
+		}
+
 		for _, field := range b.fields {
 			field.Emit(w)
 		}
+
 		w.Printf("}\n")
 	case typeBase:
 		w.Printf(" ")
@@ -250,6 +267,11 @@ func (b *TypeBuilder) Emit(w Writer) {
 
 		for _, method := range b.methods {
 			method.Emit(w)
+			w.Printf("\n")
+		}
+
+		for _, e := range b.embedded {
+			e.Emit(w)
 			w.Printf("\n")
 		}
 
