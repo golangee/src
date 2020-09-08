@@ -63,4 +63,6 @@ func TestDSL(t *testing.T) {
 				ImplementMock(myIface),
 			),
 	)
+
+	fmt.Println(NewSliceDecl(NewTypeDecl("net/http.Response")))
 }

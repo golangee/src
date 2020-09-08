@@ -110,8 +110,20 @@ func (t *TypeDecl) Params() []*TypeDecl {
 	return t.params
 }
 
+// String returns a debug output
+func (t *TypeDecl) String() string {
+	w := &BufferedWriter{}
+	t.Emit(w)
+	return w.String()
+}
+
 func (t *TypeDecl) Emit(w Writer) {
-	base := t.parent.File().Use(t.qualifier)
+	var base string
+	if t.parent != nil {
+		base = t.parent.File().Use(t.qualifier)
+	} else {
+		base = string(t.qualifier)
+	}
 	w.Printf(base)
 	w.Printf(" ")
 	switch base {
