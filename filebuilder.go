@@ -51,6 +51,21 @@ func (b *FileBuilder) AddTypes(types ...*TypeBuilder) *FileBuilder {
 	return b
 }
 
+// Types returns the underlying slice of registered types.
+func (b *FileBuilder) Types() []*TypeBuilder {
+	return b.types
+}
+
+// TypeByName returns either the first type with the given name or nil.
+func (b *FileBuilder) TypeByName(name string) *TypeBuilder {
+	for _, typ := range b.types {
+		if typ.name == name {
+			return typ
+		}
+	}
+	return nil
+}
+
 func (b *FileBuilder) AddFuncs(funcs ...*FuncBuilder) *FileBuilder {
 	b.funcs = append(b.funcs, funcs...)
 	for _, builder := range funcs {
@@ -58,6 +73,21 @@ func (b *FileBuilder) AddFuncs(funcs ...*FuncBuilder) *FileBuilder {
 	}
 
 	return b
+}
+
+// Funcs returns the underlying slice of registered functions.
+func (b *FileBuilder) Funcs() []*FuncBuilder {
+	return b.funcs
+}
+
+// FuncByName returns the first matching function by name or nil.
+func (b *FileBuilder) FuncByName(name string) *FuncBuilder {
+	for _, fun := range b.funcs {
+		if fun.name == name {
+			return fun
+		}
+	}
+	return nil
 }
 
 func (b *FileBuilder) SetPackageDoc(doc string) *FileBuilder {
