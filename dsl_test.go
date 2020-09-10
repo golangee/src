@@ -74,10 +74,19 @@ func TestDSL(t *testing.T) {
 					NewTypeDecl("io.Reader"),
 				),
 
+			NewStruct("Opts").AddFields(
+				NewField("Name", NewTypeDecl("string")),
+			).
+				AddMethodFromJson("FromJson").
+				AddMethodToJson("ToJson", true, false, true).
+				AddMethodToJson("ToJson2", false, true, false),
+
 		).AddVars(
 			NewVar("x").SetRHS(NewBlock("5")),
 			NewVar("y").SetRHS(NewBlock("7")),
 			NewVar("z").SetRHS(NewBlock("\"hello\"")).SetDoc("...is the last variable."),
 		),
+
+
 	)
 }

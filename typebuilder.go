@@ -14,7 +14,9 @@
 
 package src
 
-import "strconv"
+import (
+	"strconv"
+)
 
 type internalType int
 
@@ -234,6 +236,73 @@ func (b *TypeBuilder) AddMethods(methods ...*FuncBuilder) *TypeBuilder {
 	for _, m := range methods {
 		m.onAttach(b)
 	}
+	return b
+}
+
+// AddMethodFromJson adds a pointer receiver func like
+//   <name>(buf []byte)error
+func (b *TypeBuilder) AddMethodFromJson(name string) *TypeBuilder {
+	fun := NewFunc(name).SetDoc("...tries to parse the given buffer as json and updates the current values accordingly.")
+	b.AddMethods(fun)
+
+	fun.SetPointerReceiver(true).
+		AddParams(NewParameter("buf", NewSliceDecl(NewTypeDecl("byte")))).
+		AddResults(NewParameter("", NewTypeDecl("error"))).
+		AddBody(NewBlock().
+			AddLine("if err := ", NewTypeDecl("encoding/json.Unmarshal"), "(buf,", fun.ReceiverName(), ");err!=nil {").
+			AddLine("return err").
+			AddLine("}").
+			NewLine().
+			AddLine("return nil"),
+		)
+
+	return b
+}
+
+// AddMethodToJson adds a method to emit a json string with the according other options.
+func (b *TypeBuilder) AddMethodToJson(name string, asString, ptrReceiver, assertNoError bool) *TypeBuilder {
+	fun := NewFunc(name).SetDoc("...serializes the struct into a json string.")
+	b.AddMethods(fun)
+
+	fun.SetPointerReceiver(ptrReceiver)
+	if asString {
+		fun.AddResults(NewParameter("", NewTypeDecl("string")))
+	} else {
+		fun.AddResults(NewParameter("", NewSliceDecl(NewTypeDecl("byte"))))
+	}
+
+	if !assertNoError {
+		fun.AddResults(NewParameter("", NewTypeDecl("error")))
+	}
+
+	body := NewBlock().
+		AddLine("buf, err := ", NewTypeDecl("encoding/json.Marshal"), "(", fun.ReceiverName(), ")").
+		AddLine("if err != nil {")
+
+	if assertNoError {
+		body.AddLine("panic(\"invalid state: \" + err.Error())")
+	} else {
+		body.AddLine("return nil, err")
+	}
+
+	body.AddLine("}").
+		NewLine()
+
+	if assertNoError {
+		if asString {
+			body.AddLine("return string(buf)")
+		} else {
+			body.AddLine("return buf")
+		}
+	} else {
+		if asString {
+			body.AddLine("return string(buf),nil")
+		} else {
+			body.AddLine("return buf,nil")
+		}
+	}
+
+	fun.AddBody(body)
 	return b
 }
 

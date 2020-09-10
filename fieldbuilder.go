@@ -95,12 +95,16 @@ func (b *FieldBuilder) Emit(w Writer) {
 	if len(b.tags) > 0 {
 		sb := &strings.Builder{}
 		sb.WriteRune('`')
+		i := 0
 		for k, v := range b.tags {
 			sb.WriteString(k)
 			sb.WriteRune(':')
 			values := strings.Join(v, ",")
 			sb.WriteString(strconv.Quote(values))
-			sb.WriteRune(' ')
+			if i < len(b.tags)-1 {
+				sb.WriteRune(' ')
+			}
+			i++
 		}
 		sb.WriteRune('`')
 		w.Printf(sb.String())
