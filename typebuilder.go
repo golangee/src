@@ -33,8 +33,8 @@ type TypeBuilder struct {
 	fields     []*FieldBuilder
 	baseType   *TypeDecl
 	enumValues []string
-	consts     []*Const //associated constants
-	vars       []*Var   //associated variables
+	consts     []*Const      //associated constants
+	vars       []*VarBuilder //associated variables
 	embedded   []*TypeDecl
 }
 
@@ -176,12 +176,12 @@ func (b *TypeBuilder) AddConstants(constExpr ...*Const) *TypeBuilder {
 	return b
 }
 
-func (b *TypeBuilder) Variables() []*Var {
+func (b *TypeBuilder) Variables() []*VarBuilder {
 	return b.vars
 }
 
 // AddVariables adds associated variable declarations
-func (b *TypeBuilder) AddVariables(varExpr ...*Var) *TypeBuilder {
+func (b *TypeBuilder) AddVariables(varExpr ...*VarBuilder) *TypeBuilder {
 	b.vars = append(b.vars, varExpr...)
 	for _, c := range varExpr {
 		c.onAttach(b)

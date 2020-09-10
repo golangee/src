@@ -27,6 +27,7 @@ type FileBuilder struct {
 	genHeader    string
 	doc          string
 	importPath   string //optional, will help to avoid illegal self imports
+	vars         []*VarBuilder
 }
 
 func NewFile(pkgName string) *FileBuilder {
@@ -49,6 +50,20 @@ func (b *FileBuilder) AddTypes(types ...*TypeBuilder) *FileBuilder {
 	}
 
 	return b
+}
+
+// AddVars appends package global variables. They are rendered right after the import statements.
+func (b *FileBuilder) AddVars(vars ...*VarBuilder) *FileBuilder {
+	b.vars = append(b.vars, vars...)
+	for _, v := range vars {
+		v.onAttach(b)
+	}
+	return b
+}
+
+// Vars returns the current variables.
+func (b *FileBuilder) Vars() []*VarBuilder {
+	return b.vars
 }
 
 // Types returns the underlying slice of registered types.
@@ -149,6 +164,11 @@ func (b *FileBuilder) SetGeneratorName(name string) *FileBuilder {
 func (b *FileBuilder) Emit(w Writer) {
 
 	tmp := &BufferedWriter{}
+	for _, v := range b.vars {
+		v.Emit(tmp)
+		w.Printf("\n")
+	}
+
 	for _, t := range b.types {
 		t.Emit(tmp)
 	}

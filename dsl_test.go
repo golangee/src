@@ -72,6 +72,12 @@ func TestDSL(t *testing.T) {
 				AddEmbedded(
 					NewTypeDecl("io.Writer"),
 					NewTypeDecl("io.Reader"),
-				)),
+				),
+
+		).AddVars(
+			NewVar("x").SetRHS(NewBlock("5")),
+			NewVar("y").SetRHS(NewBlock("7")),
+			NewVar("z").SetRHS(NewBlock("\"hello\"")).SetDoc("...is the last variable."),
+		),
 	)
 }
