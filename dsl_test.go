@@ -54,6 +54,7 @@ func TestDSL(t *testing.T) {
 					NewParameter("", NewSliceDecl(NewTypeDecl("Book"))),
 					NewParameter("", NewTypeDecl("error")),
 				),
+			NewFunc("SideEffectOnly"),
 		)
 
 	fmt.Println(
