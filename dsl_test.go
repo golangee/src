@@ -73,6 +73,8 @@ func TestDSL(t *testing.T) {
 				AddEmbedded(
 					NewTypeDecl("io.Writer"),
 					NewTypeDecl("io.Reader"),
+					NewTypeDecl("loan/core.Service"),
+					NewTypeDecl("search/core.Service"),
 				),
 
 			NewStruct("Opts").AddFields(

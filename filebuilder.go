@@ -134,7 +134,12 @@ func (b *FileBuilder) Use(q Qualifier) string {
 	for i := 0; i >= 0; i++ {
 		nextName := sanitizeName(strings.ToLower(lastName(q.Path())))
 		if i > 0 {
-			nextName += strconv.Itoa(i)
+			if i == 1 {
+				// be more clever on collision and use a nicer addition of the path name before the last one
+				nextName = sanitizeName(strings.ToLower(lastlastName(q.Path()) + lastName(q.Path())))
+			} else {
+				nextName += strconv.Itoa(i)
+			}
 		}
 
 		if !b.hasImportAlias(nextName) {
@@ -211,6 +216,15 @@ func lastName(text string) string {
 	pkgname := text
 	if len(tokens) > 0 {
 		pkgname = tokens[len(tokens)-1]
+	}
+	return pkgname
+}
+
+func lastlastName(text string) string {
+	tokens := strings.Split(text, "/")
+	pkgname := text
+	if len(tokens) > 1 {
+		pkgname = tokens[len(tokens)-2]
 	}
 	return pkgname
 }
