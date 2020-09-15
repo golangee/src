@@ -14,7 +14,10 @@
 
 package src
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // Types and generics are expressed by a type declaration. For example:
 //   int: TypeDecl{qualifier:"int"}
@@ -114,7 +117,7 @@ func (t *TypeDecl) Params() []*TypeDecl {
 func (t *TypeDecl) String() string {
 	w := &BufferedWriter{}
 	t.Emit(w)
-	return w.String()
+	return strings.TrimSpace(w.String())
 }
 
 func (t *TypeDecl) Emit(w Writer) {
