@@ -20,14 +20,15 @@ import (
 )
 
 type FileBuilder struct {
-	namedImports map[string]string // path => named import alias
-	types        []*TypeBuilder
-	funcs        []*FuncBuilder
-	pkgName      string
-	genHeader    string
-	doc          string
-	importPath   string //optional, will help to avoid illegal self imports
-	vars         []*VarBuilder
+	namedImports      map[string]string // path => named import alias
+	sideEffectImports []string          // paths only
+	types             []*TypeBuilder
+	funcs             []*FuncBuilder
+	pkgName           string
+	genHeader         string
+	doc               string
+	importPath        string //optional, will help to avoid illegal self imports
+	vars              []*VarBuilder
 }
 
 func NewFile(pkgName string) *FileBuilder {
@@ -40,6 +41,20 @@ func (b *FileBuilder) File() *FileBuilder {
 
 func (b *FileBuilder) SetImportPath(path string) *FileBuilder {
 	b.importPath = path
+	return b
+}
+
+// PutNamedImport allows to manually set the named alias for a given path.
+// Normally, you don't need that because Use detects and handles collisions
+// automatically.
+func (b *FileBuilder) PutNamedImport(path, alias string) *FileBuilder {
+	b.namedImports[path] = alias
+	return b
+}
+
+// AddSideEffectImports appends more paths to be imported just for side effect.
+func (b *FileBuilder) AddSideEffectImports(paths ...string) *FileBuilder {
+	b.sideEffectImports = append(b.sideEffectImports, paths...)
 	return b
 }
 
@@ -193,6 +208,10 @@ func (b *FileBuilder) Emit(w Writer) {
 		w.Printf("import(\n")
 		for path, name := range b.namedImports {
 			w.Printf("%s \"%s\"\n", name, path)
+		}
+
+		for _, path := range b.sideEffectImports {
+			w.Printf("_ \"%s\"\n", path)
 		}
 		w.Printf(")\n")
 	}

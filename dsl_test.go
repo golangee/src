@@ -88,7 +88,7 @@ func TestDSL(t *testing.T) {
 			NewVar("x").SetRHS(NewBlock("5")),
 			NewVar("y").SetRHS(NewBlock("7")),
 			NewVar("z").SetRHS(NewBlock("\"hello\"")).SetDoc("...is the last variable."),
-		),
+		).AddSideEffectImports("github.com/go-sql-driver/mysql"),
 
 
 	)
