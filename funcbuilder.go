@@ -47,6 +47,15 @@ func (b *FuncBuilder) Params() []*Parameter {
 	return b.params
 }
 
+func (b *FuncBuilder) CloneParams() []*Parameter {
+	var r []*Parameter
+	for _, p := range b.params {
+		r = append(r, p.Clone())
+	}
+
+	return r
+}
+
 func (b *FuncBuilder) AddParams(params ...*Parameter) *FuncBuilder {
 	b.params = append(b.params, params...)
 	for _, p := range params {
@@ -76,6 +85,15 @@ func (b *FuncBuilder) Variadic() bool {
 
 func (b *FuncBuilder) Results() []*Parameter {
 	return b.results
+}
+
+func (b *FuncBuilder) CloneResults() []*Parameter {
+	var r []*Parameter
+	for _, p := range b.results {
+		r = append(r, p.Clone())
+	}
+
+	return r
 }
 
 func (b *FuncBuilder) AddBody(blocks ...*Block) *FuncBuilder {

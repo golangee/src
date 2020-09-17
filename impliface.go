@@ -12,8 +12,8 @@ func Implement(iface *TypeBuilder, ptrReceiver bool) *TypeBuilder {
 		strct.AddMethods(
 			NewFunc(fun.name).
 				SetDoc(fun.Doc()).
-				AddParams(fun.Params()...).
-				AddResults(fun.Results()...).
+				AddParams(fun.CloneParams()...).
+				AddResults(fun.CloneResults()...).
 				SetPointerReceiver(ptrReceiver),
 		)
 	}

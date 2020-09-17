@@ -27,6 +27,10 @@ func NewParameter(name string, decl *TypeDecl) *Parameter {
 	}
 }
 
+func (p *Parameter) Clone() *Parameter {
+	return NewParameter(p.name, p.decl.Clone())
+}
+
 func (p *Parameter) Name() string {
 	return p.name
 }
