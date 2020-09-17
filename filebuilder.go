@@ -39,6 +39,11 @@ func (b *FileBuilder) File() *FileBuilder {
 	return b
 }
 
+// ImportPath returns the optional import path
+func (b *FileBuilder) ImportPath() string {
+	return b.importPath
+}
+
 func (b *FileBuilder) SetImportPath(path string) *FileBuilder {
 	b.importPath = path
 	return b
