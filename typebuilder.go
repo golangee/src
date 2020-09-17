@@ -222,6 +222,17 @@ func (b *TypeBuilder) Fields() []*FieldBuilder {
 	return b.fields
 }
 
+// FieldByName returns the named field or nil.
+func (b *TypeBuilder) FieldByName(name string) *FieldBuilder {
+	for _, field := range b.fields {
+		if field.name == name {
+			return field
+		}
+	}
+
+	return nil
+}
+
 func (b *TypeBuilder) AddFields(fields ...*FieldBuilder) *TypeBuilder {
 	b.iType = typeStruct
 	b.fields = append(b.fields, fields...)
