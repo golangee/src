@@ -17,7 +17,19 @@ func NewTranspilerModel() *src.Module {
 				src.NewSrcFile("example").
 					AddTypes(
 						src.NewStruct("Test").
-							SetDoc("...is a simple example of defining a class or struct.\n\n    Can we have newlines?"),
+							SetDoc("...is a simple example of defining a class or struct.\n\n    Can we have newlines?").
+							AddFields(
+								src.NewField("aText1", src.NewSimpleTypeDecl("string")).
+									SetDoc("...is a go public string").
+									SetVisibility(src.Public),
+								src.NewField("aText2", src.NewTypeDeclPtr(src.NewSimpleTypeDecl("string"))).
+									SetDoc("...is a go private string pointer").
+									SetVisibility(src.Private),
+								src.NewField("aText3", src.NewSliceTypeDecl(src.NewSimpleTypeDecl("String"))).
+									SetDoc("...is a package private java string array").
+									SetVisibility(src.PackagePrivate),
+							),
+
 					),
 			),
 	)

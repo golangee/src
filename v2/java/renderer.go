@@ -15,6 +15,7 @@ func writeComment(w *src.BufferedWriter, name, doc string) {
 	myDoc := formatComment(name, doc)
 	if doc != "" {
 		w.Printf(myDoc)
+		w.Printf("\n")
 	}
 }
 
@@ -22,11 +23,11 @@ func writeComment(w *src.BufferedWriter, name, doc string) {
 func renderFile(file *srcFileNode) ([]byte, error) {
 	w := &src.BufferedWriter{}
 
-	writeComment(w, file.parent.pkg.PackageName(), file.file.DocPreamble())
+	writeComment(w, file.parent.srcPackage.PackageName(), file.srcFile.DocPreamble())
 	w.Printf("\n\n") // double line break, otherwise the formatter will purge it
-	writeComment(w, file.parent.pkg.PackageName(), file.file.Doc())
+	writeComment(w, file.parent.srcPackage.PackageName(), file.srcFile.Doc())
 
-	w.Printf("package %s;\n", file.parent.pkg.PackageName())
+	w.Printf("package %s;\n", file.parent.srcPackage.PackageName())
 	for _, typ := range file.types {
 		if err := renderType(typ, w); err != nil {
 			return nil, err
@@ -36,20 +37,60 @@ func renderFile(file *srcFileNode) ([]byte, error) {
 }
 
 func renderType(t *typeNode, w *src.BufferedWriter) error {
-	switch obj := t.namedType.(type) {
-	case *src.Struct:
-		return renderStruct(t, obj, w)
+	switch node := t.namedNode.(type) {
+	case *structNode:
+		return renderStruct(node, w)
 	default:
 		panic("type not yet implemented: " + reflect.TypeOf(t).String())
 	}
 }
 
-func renderStruct(node *typeNode, obj *src.Struct, w *src.BufferedWriter) error {
-	writeComment(w,obj.Name(),obj.Doc())
-	w.Printf(visibilityAsKeyword(obj.Visibility()))
+func renderStruct(node *structNode, w *src.BufferedWriter) error {
+	writeComment(w, node.srcStruct.Name(), node.srcStruct.Doc())
+	w.Printf(visibilityAsKeyword(node.srcStruct.Visibility()))
 	w.Printf(" ")
-	w.Printf("class %s {\n", obj.Name())
+	w.Printf("class %s {\n", node.srcStruct.Name())
+	for _, field := range node.fields {
+		if err := renderField(field, w); err != nil {
+			return fmt.Errorf("failed to render field %s: %w", field.srcField.Name(), err)
+		}
+	}
 	w.Printf("}\n")
+
+	return nil
+}
+
+func renderField(node *fieldNode, w *src.BufferedWriter) error {
+	writeComment(w, node.srcField.Name(), node.srcField.Doc())
+	w.Printf(visibilityAsKeyword(node.srcField.Visibility()))
+	w.Printf(" ")
+	if err := renderTypeDecl(node.typeDeclNode, w); err != nil {
+		return err
+	}
+	w.Printf(" ")
+	w.Printf(node.srcField.Name())
+	w.Printf(";\n")
+
+	return nil
+}
+
+func renderTypeDecl(node *typeDeclNode, w *src.BufferedWriter) error {
+	switch t := node.srcTypeDecl.(type) {
+	case *src.SimpleTypeDecl:
+		w.Printf(t.String())
+	case *src.TypeDeclPtr:
+		w.Printf("java.util.concurrent.atomic.AtomicReference<")
+		childTypeDecl := newTypeDeclNode(node, t.TypeDecl())
+		if err := renderTypeDecl(childTypeDecl, w); err != nil {
+			return err
+		}
+		w.Printf(">")
+	case *src.SliceTypeDecl:
+		w.Printf(string(t.TypeDecl().String()))
+		w.Printf("[]")
+	default:
+		panic("not yet implemented: " + reflect.TypeOf(node.srcTypeDecl).String())
+	}
 
 	return nil
 }
@@ -67,6 +108,7 @@ func visibilityAsKeyword(v src.Visibility) string {
 	default:
 		panic("visibility not implemented: " + strconv.Itoa(int(v)))
 	}
+
 }
 
 // Render emits the declared module as a java project.
@@ -76,10 +118,10 @@ func Render(mod *src.Module) ([]src.RenderedFile, error) {
 	tree := newModNode(mod)
 
 	for _, p := range tree.packages {
-		if p.pkg.Doc() != "" {
+		if p.srcPackage.Doc() != "" {
 			pDoc := src.NewSrcFile(packageJavaDocFile)
-			pDoc.SetDoc(p.pkg.Doc())
-			pDoc.SetDocPreamble(p.pkg.DocPreamble())
+			pDoc.SetDoc(p.srcPackage.Doc())
+			pDoc.SetDocPreamble(p.srcPackage.DocPreamble())
 			docNode := newSrcFileNode(p, pDoc)
 			buf, err := renderFile(docNode)
 			if err != nil {
@@ -87,7 +129,7 @@ func Render(mod *src.Module) ([]src.RenderedFile, error) {
 			}
 
 			res = append(res, src.RenderedFile{
-				AbsoluteFileName: filepath.Join(p.pkg.ImportPath(), docNode.file.Name()+".java"),
+				AbsoluteFileName: filepath.Join(p.srcPackage.ImportPath(), docNode.srcFile.Name()+".java"),
 				MimeType:         mimeTypeJava,
 				Buf:              buf,
 				Error:            err,
@@ -95,17 +137,17 @@ func Render(mod *src.Module) ([]src.RenderedFile, error) {
 
 		}
 
-		for _, file := range p.srcFiles {
+		for _, file := range p.files {
 			buf, err := renderFile(file)
 			res = append(res, src.RenderedFile{
-				AbsoluteFileName: filepath.Join(p.pkg.ImportPath(), file.file.Name()+".java"),
+				AbsoluteFileName: filepath.Join(p.srcPackage.ImportPath(), file.srcFile.Name()+".java"),
 				MimeType:         mimeTypeJava,
 				Buf:              buf,
 				Error:            err,
 			})
 
 			if err != nil {
-				return res, fmt.Errorf("unable to render %s/%s: %w", p.pkg.ImportPath(), file.file.Name(), err)
+				return res, fmt.Errorf("unable to render %s/%s: %w", p.srcPackage.ImportPath(), file.srcFile.Name(), err)
 			}
 		}
 	}

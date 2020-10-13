@@ -78,7 +78,7 @@ func TestDSL(t *testing.T) {
 				),
 
 			NewStruct("Opts").AddFields(
-				NewField("Name", NewTypeDecl("string")),
+				NewField("Identifier", NewTypeDecl("string")),
 			).
 				AddMethodFromJson("FromJson").
 				AddMethodToJson("ToJson", true, false, true).
