@@ -1,6 +1,23 @@
 package src
 
+import "strconv"
+
 type Visibility int
+
+func (v Visibility) String() string {
+	switch v {
+	case Public:
+		return "public"
+	case PackagePrivate:
+		return "packagePrivate"
+	case Protected:
+		return "protected"
+	case Private:
+		return "private"
+	default:
+		return "unknown-" + strconv.Itoa(int(v))
+	}
+}
 
 const (
 	// Public declarations are visible for everyone.
@@ -18,3 +35,6 @@ const (
 	// on the target. This is a Java-only feature. Other renderers should treat this as PackagePrivate.
 	Private
 )
+
+// Visibilities contains all available visibilities.
+var Visibilities = []Visibility{Public, PackagePrivate, Protected, Private}

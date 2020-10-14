@@ -28,11 +28,21 @@ func renderFile(file *srcFileNode) ([]byte, error) {
 	writeComment(w, file.parent.srcPackage.PackageName(), file.srcFile.Doc())
 
 	w.Printf("package %s;\n", file.parent.srcPackage.PackageName())
+
+	// render everything into tmp first, the importer beautifies all required imports on-the-go
+	tmp := &src.BufferedWriter{}
 	for _, typ := range file.types {
-		if err := renderType(typ, w); err != nil {
+		if err := renderType(typ, tmp); err != nil {
 			return nil, err
 		}
 	}
+
+	for _, qualifier := range file.importer.qualifiers() {
+		w.Printf("import %s;\n", qualifier)
+	}
+
+	w.Printf(tmp.String())
+
 	return Format(w.Bytes())
 }
 
@@ -75,19 +85,59 @@ func renderField(node *fieldNode, w *src.BufferedWriter) error {
 }
 
 func renderTypeDecl(node *typeDeclNode, w *src.BufferedWriter) error {
+	importer := importerFromTree(node)
+
 	switch t := node.srcTypeDecl.(type) {
 	case *src.SimpleTypeDecl:
-		w.Printf(t.String())
+		w.Printf(string(importer.shortify(fromStdlib(t.Name()))))
 	case *src.TypeDeclPtr:
-		w.Printf("java.util.concurrent.atomic.AtomicReference<")
+		atomicReference := importer.shortify("java.util.concurrent.atomic.AtomicReference")
+		w.Printf(string(atomicReference) + "<")
 		childTypeDecl := newTypeDeclNode(node, t.TypeDecl())
 		if err := renderTypeDecl(childTypeDecl, w); err != nil {
 			return err
 		}
 		w.Printf(">")
 	case *src.SliceTypeDecl:
-		w.Printf(string(t.TypeDecl().String()))
+		childTypeDecl := newTypeDeclNode(node, t.TypeDecl())
+		if err := renderTypeDecl(childTypeDecl, w); err != nil {
+			return err
+		}
 		w.Printf("[]")
+	case *src.GenericTypeDecl:
+		baseType := newTypeDeclNode(node, t.TypeDecl())
+		if err := renderTypeDecl(baseType, w); err != nil {
+			return err
+		}
+		w.Printf("<")
+		for i, decl := range t.Params() {
+			childTypeDecl := newTypeDeclNode(node, decl)
+			if err := renderTypeDecl(childTypeDecl, w); err != nil {
+				return err
+			}
+			if i < len(t.Params())-1 {
+				w.Printf(",")
+			}
+		}
+		w.Printf(">")
+	case *src.ChanTypeDecl:
+		blockingQueue := importer.shortify("java.util.concurrent.BlockingQueue")
+		w.Printf(string(blockingQueue) + "<")
+		childTypeDecl := newTypeDeclNode(node, t.TypeDecl())
+		if err := renderTypeDecl(childTypeDecl, w); err != nil {
+			return err
+		}
+		w.Printf(">")
+
+	case *src.ArrayTypeDecl:
+		// in java this is the same as a slice, we cannot have yet custom size value array. Perhaps
+		// valhalla may fix that
+		childTypeDecl := newTypeDeclNode(node, t.TypeDecl())
+		if err := renderTypeDecl(childTypeDecl, w); err != nil {
+			return err
+		}
+		w.Printf("[]")
+
 	default:
 		panic("not yet implemented: " + reflect.TypeOf(node.srcTypeDecl).String())
 	}

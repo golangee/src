@@ -1,0 +1,67 @@
+package java
+
+import (
+	"github.com/golangee/src/v2"
+	"github.com/golangee/src/v2/stdlib"
+	"strings"
+)
+
+// fromStdlib converts stdlib types (indicated by the macro ! sign at the end) and returns a java name for it.
+// Note that primitive types are always returned as their boxed types, because otherwise we would need to carry
+// a lot of context information for it. The Java/JVM model is broken anyway for generics and we just wait until
+// they fix it up (perhaps with valhalla value types). If you want a reasonable memory usage, you probably
+// want a different language.
+func fromStdlib(name src.Name) src.Name {
+	switch name {
+	case stdlib.Int:
+		return "Integer"
+
+	case stdlib.Byte:
+		return "Byte"
+
+	case stdlib.Int16:
+		return "Short"
+
+	case stdlib.Int32:
+		return "Integer"
+
+	case stdlib.Int64:
+		return "Long"
+
+	case stdlib.Float32:
+		return "Float"
+
+	case stdlib.Float64:
+		return "Double"
+
+	case stdlib.Map:
+		return "java.util.Map"
+
+	case stdlib.List:
+		return "java.util.List"
+
+	case stdlib.UUID:
+		return "java.util.UUID"
+
+	case stdlib.String:
+		return "String"
+
+	case stdlib.Error:
+		return "Exception"
+
+	case stdlib.Time:
+		return "java.time.ZonedDateTime"
+
+	case stdlib.Duration:
+		return "java.time.Duration"
+
+	case stdlib.URL:
+		return "java.net.URL"
+
+	default:
+		if strings.HasSuffix(string(name), "!") {
+			panic("not a stdlib type: " + string(name))
+		}
+		return name
+	}
+}

@@ -5,8 +5,75 @@ import (
 	"github.com/golangee/src/v2"
 	"github.com/golangee/src/v2/golang"
 	"github.com/golangee/src/v2/java"
+	"github.com/golangee/src/v2/stdlib"
 	"testing"
 )
+
+func createFieldTable() []*src.Field {
+	var res []*src.Field
+	for _, t := range stdlib.Types {
+		switch t {
+		case stdlib.List:
+			continue
+		case stdlib.Map:
+			continue
+		}
+
+		visibility := src.Public
+		res = append(res,
+			src.NewField("field"+t[:len(t)-1], src.NewSimpleTypeDecl(src.Name(t))).
+				SetDoc("...is a "+visibility.String()+" "+t).
+				SetVisibility(visibility),
+		)
+
+		visibility = src.Private
+		res = append(res,
+			src.NewField("field"+t[:len(t)-1]+"Slice", src.NewSliceTypeDecl(src.NewSimpleTypeDecl(src.Name(t)))).
+				SetDoc("...is a "+visibility.String()+" slice of "+t).
+				SetVisibility(visibility),
+		)
+
+		visibility = src.PackagePrivate
+		res = append(res,
+			src.NewField("field"+t[:len(t)-1]+"Ptr", src.NewTypeDeclPtr(src.NewSimpleTypeDecl(src.Name(t)))).
+				SetDoc("...is a "+visibility.String()+" pointer to "+t).
+				SetVisibility(visibility),
+		)
+	}
+
+	res = append(res,
+		src.NewField("fieldMap", src.NewMapDecl(src.NewSimpleTypeDecl(stdlib.String), src.NewSimpleTypeDecl(stdlib.Int))).
+			SetDoc("...is a string/int map").
+			SetVisibility(src.Protected),
+	)
+
+	res = append(res,
+		src.NewField("fieldList", src.NewListDecl(src.NewSimpleTypeDecl(stdlib.String))).
+			SetDoc("...is a List of strings").
+			SetVisibility(src.Public),
+	)
+
+	res = append(res,
+		src.NewField("fieldChan", src.NewChanTypeDecl(src.NewSimpleTypeDecl(stdlib.String))).
+			SetDoc("...is a channel of strings").
+			SetVisibility(src.Public),
+	)
+
+	res = append(res,
+		src.NewField("fieldArray", src.NewArrayTypeDecl(5,src.NewSimpleTypeDecl(stdlib.Int))).
+			SetDoc("...is an array with exact 5 int elements").
+			SetVisibility(src.Public),
+	)
+
+	res = append(res,
+		src.NewField("fieldComplex", src.NewTypeDeclPtr(src.NewMapDecl(src.NewTypeDeclPtr(src.NewSimpleTypeDecl(stdlib.String)), src.NewListDecl(src.NewListDecl(src.NewSimpleTypeDecl(stdlib.Int)))))).
+			SetDoc("...is a pointer to a map with keys, which are pointers to a string and values are a list of list of integer").
+			SetVisibility(src.Public),
+	)
+
+
+	return res
+}
 
 func NewTranspilerModel() *src.Module {
 	mod := src.NewModule().AddPackages(
@@ -18,17 +85,7 @@ func NewTranspilerModel() *src.Module {
 					AddTypes(
 						src.NewStruct("Test").
 							SetDoc("...is a simple example of defining a class or struct.\n\n    Can we have newlines?").
-							AddFields(
-								src.NewField("aText1", src.NewSimpleTypeDecl("string")).
-									SetDoc("...is a go public string").
-									SetVisibility(src.Public),
-								src.NewField("aText2", src.NewTypeDeclPtr(src.NewSimpleTypeDecl("string"))).
-									SetDoc("...is a go private string pointer").
-									SetVisibility(src.Private),
-								src.NewField("aText3", src.NewSliceTypeDecl(src.NewSimpleTypeDecl("String"))).
-									SetDoc("...is a package private java string array").
-									SetVisibility(src.PackagePrivate),
-							),
+							AddFields(createFieldTable()...),
 
 					),
 			),

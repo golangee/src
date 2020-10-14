@@ -15,6 +15,7 @@
 package src
 
 import (
+	"github.com/golangee/src/v2/stdlib"
 	"strconv"
 )
 
@@ -97,21 +98,36 @@ func (t *SimpleTypeDecl) sealedTypeDecl() {
 
 // A GenericTypeDecl refers to a named type and contains (optional) named type parameters, commonly known as generics.
 type GenericTypeDecl struct {
-	name   Name
-	params []TypeDecl
+	typeDecl TypeDecl
+	params   []TypeDecl
 }
 
 // NewGenericDecl creates and returns a new generic declaration.
-func NewGenericDecl(name Name, params ...TypeDecl) *GenericTypeDecl {
+func NewGenericDecl(typeDecl TypeDecl, params ...TypeDecl) *GenericTypeDecl {
 	return &GenericTypeDecl{
-		name:   name,
-		params: params,
+		typeDecl: typeDecl,
+		params:   params,
 	}
+}
+
+// TypeDecl returns the actual Type definition.
+func (t *GenericTypeDecl) TypeDecl() TypeDecl {
+	return t.typeDecl
+}
+
+// SetTypeDecl updates the type declaration.
+func (t *GenericTypeDecl) SetTypeDecl(typeDecl TypeDecl) {
+	t.typeDecl = typeDecl
+}
+
+// Params returns all declared type parameters.
+func (t *GenericTypeDecl) Params() []TypeDecl {
+	return t.params
 }
 
 // String returns a debugging representation.
 func (t *GenericTypeDecl) String() string {
-	tmp := string(t.name)
+	tmp := t.typeDecl.String()
 	tmp += "<"
 	for i, param := range t.params {
 		tmp += param.String()
@@ -244,23 +260,32 @@ func (t *SliceTypeDecl) sealedTypeDecl() {
 // ArrayTypeDecl declares a fixed length array type of an arbitrary type. This is not expressible in Java and
 // degenerates to a normal array.
 type ArrayTypeDecl struct {
-	len  int
-	name Name
+	len      int
+	typeDecl TypeDecl
 }
 
-// Name returns the qualified name.
-func (t *ArrayTypeDecl) Name() Name {
-	return t.name
+// NewArrayTypeDecl returns a new array type.
+func NewArrayTypeDecl(len int, typeDecl TypeDecl) *ArrayTypeDecl {
+	return &ArrayTypeDecl{
+		len:      len,
+		typeDecl: typeDecl,
+	}
 }
 
-// SetName updates the named type declaration.
-func (t *ArrayTypeDecl) SetName(name Name) {
-	t.name = name
+// TypeDecl returns the declared type.
+func (t *ArrayTypeDecl) TypeDecl() TypeDecl {
+	return t.typeDecl
+}
+
+// SetTypeDecl updates the named type declaration.
+func (t *ArrayTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ArrayTypeDecl {
+	t.typeDecl = typeDecl
+	return t
 }
 
 // String returns a debugging representation.
 func (t *ArrayTypeDecl) String() string {
-	return "[" + strconv.Itoa(t.len) + "]" + string(t.name)
+	return "[" + strconv.Itoa(t.len) + "]" + t.typeDecl.String()
 }
 
 func (t *ArrayTypeDecl) sealedTypeDecl() {
@@ -272,7 +297,15 @@ func (t *ArrayTypeDecl) sealedTypeDecl() {
 // NewMapDecl is just a normal generic declaration but represents either the Go builtin type "map" or
 // for Java the java.util.Map type.
 func NewMapDecl(key, val TypeDecl) *GenericTypeDecl {
-	return NewGenericDecl("map", key, val)
+	return NewGenericDecl(NewSimpleTypeDecl(stdlib.Map), key, val)
+}
+
+//======
+
+// NewListDecl is just a normal generic declaration but represents either the Go slice type or
+// for Java the java.util.List type.
+func NewListDecl(val TypeDecl) *GenericTypeDecl {
+	return NewGenericDecl(NewSimpleTypeDecl(stdlib.List), val)
 }
 
 //======
@@ -293,23 +326,32 @@ const (
 // language itself. Java does not have such a type, but java.util.concurrent.BlockingQueue may be the
 // equivalent.
 type ChanTypeDecl struct {
-	name Name
-	dir  ChanDir
+	typeDecl TypeDecl
+	dir      ChanDir
 }
 
-// Name returns the qualified name.
-func (t *ChanTypeDecl) Name() Name {
-	return t.name
+// NewChanTypeDecl creates a bidirectional channel type.
+func NewChanTypeDecl(typeDecl TypeDecl) *ChanTypeDecl {
+	return &ChanTypeDecl{
+		typeDecl: typeDecl,
+		dir:      ChanSendRecv,
+	}
 }
 
-// SetName updates the named type declaration.
-func (t *ChanTypeDecl) SetName(name Name) {
-	t.name = name
+// TypeDecl returns the declared type.
+func (t *ChanTypeDecl) TypeDecl() TypeDecl {
+	return t.typeDecl
+}
+
+// SetTypeDecl updates the named type declaration.
+func (t *ChanTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ChanTypeDecl {
+	t.typeDecl = typeDecl
+	return t
 }
 
 // String returns a debugging representation.
 func (t *ChanTypeDecl) String() string {
-	return string(t.name) + " " + string(t.name)
+	return string(t.dir) + " " + t.typeDecl.String()
 }
 
 func (t *ChanTypeDecl) sealedTypeDecl() {
