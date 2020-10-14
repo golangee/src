@@ -43,6 +43,8 @@ func renderType(t *typeNode, w *src.BufferedWriter) error {
 	}
 }
 
+
+
 func renderStruct(node *typeNode, obj *src.Struct, w *src.BufferedWriter) error {
 	writeComment(w,obj.Name(),obj.Doc())
 	w.Printf("type ")

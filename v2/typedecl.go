@@ -367,6 +367,11 @@ type FuncTypeDecl struct {
 	out []*Param
 }
 
+// NewFuncTypeDecl returns a parameterless function signature.
+func NewFuncTypeDecl() *FuncTypeDecl {
+	return &FuncTypeDecl{}
+}
+
 // AddInputParams appends the given parameters as the functions input parameters.
 func (f *FuncTypeDecl) AddInputParams(p ...*Param) *FuncTypeDecl {
 	f.in = append(f.in, p...)
@@ -404,15 +409,15 @@ func (f *FuncTypeDecl) String() string {
 		tmp += " "
 	}
 
+	if len(f.out) > 1 {
+		tmp += "("
+	}
+
 	for i, param := range f.out {
 		tmp += param.String()
 		if i < len(f.in)-1 {
 			tmp += ","
 		}
-	}
-
-	if len(f.out) > 1 {
-		tmp += "("
 	}
 
 	if len(f.out) > 1 {

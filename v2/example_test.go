@@ -80,6 +80,21 @@ func createFieldTable() []*src.Field {
 			SetVisibility(src.Public),
 	)
 
+	res = append(res,
+		src.NewField("fieldFunc",
+			src.NewFuncTypeDecl().
+				AddInputParams(
+					src.NewParam("limit", src.NewSimpleTypeDecl(stdlib.Int)),
+					src.NewParam("offset", src.NewSimpleTypeDecl(stdlib.Int32)),
+				).
+				AddOutputParams(
+					src.NewParam("res", src.NewSliceTypeDecl(src.NewSimpleTypeDecl(stdlib.String))),
+					src.NewParam("err", src.NewSimpleTypeDecl(stdlib.Error)),
+				)).
+			SetDoc("...is a function pointer.").
+			SetVisibility(src.Public),
+	)
+
 	return res
 }
 
@@ -93,7 +108,17 @@ func NewTranspilerModel() *src.Module {
 					AddTypes(
 						src.NewStruct("Test").
 							SetDoc("...is a simple example of defining a class or struct.\n\n    Can we have newlines?").
+							SetFinal(true).
+							SetStatic(true).
 							AddFields(createFieldTable()...),
+
+						src.NewInterface("MyInterface").
+							SetDoc("...shows how to use interfaces.").
+							AddMethods(
+								src.NewFunc("sayHello").
+									SetDoc("...says hello to the world.").
+									SetVisibility(src.Private),
+							),
 
 					),
 			),
@@ -144,6 +169,6 @@ func TestGo(t *testing.T) {
 }
 
 func TestTranspiler(t *testing.T) {
-	TestGo(t)
+	//TestGo(t)
 	TestJava(t)
 }

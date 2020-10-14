@@ -6,13 +6,15 @@ var _ NamedType = (*Struct)(nil)
 // context. If supported, the primary use case should be the usage as a value to improve conclusiveness and
 // performance by avoiding heap allocation (and potentially GC overhead). Inheritance is not possible, but other
 // types may be embedded (e.g. in Go). Languages like Java use just simple classes (PoJos), because records have no
-// real use (they are just syntax sugar for a class with final members). In contrast to that, Go cannot express
+// exclusive use (they are just syntax sugar for a class with final members). In contrast to that, Go cannot express
 // final fields.
 type Struct struct {
 	doc        string
 	name       string
 	visibility Visibility
 	fields     []*Field
+	final      bool
+	static     bool
 }
 
 // NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
@@ -22,12 +24,34 @@ func NewStruct(name string) *Struct {
 	return &Struct{name: name}
 }
 
+// Static returns true, if this struct or class should pull its outer scope. This is only for Java and inner classes.
+func (s *Struct) Static() bool {
+	return s.static
+}
+
+// SetStatic updates the static flag. Only for Java.
+func (s *Struct) SetStatic(static bool) *Struct {
+	s.static = static
+	return s
+}
+
+// Final returns true, if this struct or class cannot be inherited. This only applies to Java.
+func (s *Struct) Final() bool {
+	return s.final
+}
+
+// SetFinal updates the final flag. Only for Java.
+func (s *Struct) SetFinal(final bool) *Struct {
+	s.final = final
+	return s
+}
+
 // Name returns the declared identifier which must be unique per package.
 func (s *Struct) Name() string {
 	return s.name
 }
 
-func (s *Struct) isNamedType() {
+func (s *Struct) sealedNamedType() {
 	panic("implement me")
 }
 

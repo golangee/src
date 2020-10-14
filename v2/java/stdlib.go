@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-// fromStdlib converts stdlib types (indicated by the macro ! sign at the end) and returns a java name for it.
+// fromStdlib converts stdlib types (indicated by the macro ! sign at the end) and returns a Java name for it.
 // Note that primitive types are always returned as their boxed types, because otherwise we would need to carry
-// a lot of context information for it. The Java/JVM model is broken anyway for generics and we just wait until
+// a lot of context information for it. The Java/JVM model is more or less broken for generics and we just wait until
 // they fix it up (perhaps with valhalla value types). If you want a reasonable memory usage, you probably
-// want a different language.
+// want a different language anyway.
 func fromStdlib(name src.Name) src.Name {
 	switch name {
 	case stdlib.Int:
@@ -58,6 +58,10 @@ func fromStdlib(name src.Name) src.Name {
 	case stdlib.URL:
 		return "java.net.URL"
 
+	case stdlib.Rune:
+		// in Java this is just an int, using chars is broken and legacy code, see
+		// https://docs.oracle.com/javase/tutorial/i18n/text/characterClass.html
+		return "int"
 	default:
 		if strings.HasSuffix(string(name), "!") {
 			panic("not a stdlib type: " + string(name))

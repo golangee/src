@@ -45,6 +45,9 @@ const (
 
 	// URL refers to the Go *net/url.URL or java.net.URL type.
 	URL = "url!"
+
+	// Rune represents a 32bit unicode codepoint.
+	Rune = "rune!"
 )
 
 // Types returns all defined standard library transpiler types.
@@ -64,4 +67,5 @@ var Types = []string{
 	Time,
 	Duration,
 	URL,
+	Rune,
 }

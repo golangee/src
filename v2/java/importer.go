@@ -2,8 +2,13 @@ package java
 
 import (
 	"github.com/golangee/src/v2"
+	"github.com/golangee/src/v2/ast"
 	"sort"
 )
+
+type importerKey int
+
+const importerId importerKey = 1
 
 // importer manages the rendered import section at the files top.
 type importer struct {
@@ -16,18 +21,27 @@ func newImporter() *importer {
 	}
 }
 
-// importerFromTree walks up the tree until it finds the srcFileNode. If the node is not attached to a file,
-// it panics.
-func importerFromTree(n node) *importer {
+// installImporter installs a new importer instance into every ast.SrcFileNode.
+func installImporter(n *ast.ModNode) {
+	for _, node := range n.Packages() {
+		for _, fileNode := range node.Files() {
+			fileNode.SetValue(importerId, newImporter())
+		}
+	}
+}
+
+// importerFromTree walks up the tree until it finds the first importer from any ast.Node.Value.
+func importerFromTree(n ast.Node) *importer {
+
 	root := n
 	for root != nil {
-		if srcNode, ok := root.(*srcFileNode); ok {
-			return srcNode.importer
+		if imp, ok := root.Value(importerId).(*importer); ok {
+			return imp
 		}
 
 		newRoot := root.Parent()
 		if newRoot == nil {
-			panic("srcFileNode not found")
+			panic("no attached importer found in ast scope")
 		}
 
 		root = newRoot
@@ -53,7 +67,7 @@ func (p *importer) qualifiers() []string {
 	return sorted
 }
 
-// shortify returns a qualified name, which is only valid the importers scope. It may also decide to not import
+// shortify returns a qualified name, which is only valid in the importers scope. It may also decide to not import
 // the given name, e.g. if a collision has been detected. If the name is a universe type or not complete, the original
 // name is just returned.
 func (p *importer) shortify(name src.Name) src.Name {
