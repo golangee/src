@@ -2,12 +2,13 @@
 src is a specialized but generic code generator to support a few use cases elegantly.
 The API is intentionally not created to reflect any facette or possibility
 of a specific language. It is more comparable to a transpiler, because it can emit
-Go (Golang) and Java source.
+high quality Go (Golang) and Java source.
 
-## alternatives for Go
+## possible alternatives
 * Daves [jennifer](https://github.com/dave/jennifer)
 * go [text template](https://golang.org/pkg/text/template/)
 * a big [list](https://github.com/golang/go/wiki/GoGenerateTools) of many *go generate* tools
+* https://elixir-lang.org/
 
 ## example
 
