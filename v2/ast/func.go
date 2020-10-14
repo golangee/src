@@ -7,8 +7,9 @@ type FuncNode struct {
 	parent  Node
 	srcFunc *src.Func
 	*payload
-	params  []*ParameterNode
-	results []*ParameterNode
+	params      []*ParameterNode
+	results     []*ParameterNode
+	annotations []*AnnotationNode
 }
 
 // NewFuncNode wraps the given instance and creates a sub tree with parent/children relations to
@@ -28,6 +29,9 @@ func NewFuncNode(parent Node, fun *src.Func) *FuncNode {
 		n.results = append(n.results, NewParameterNode(n, param))
 	}
 
+	for _, annotation := range fun.Annotations() {
+		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
+	}
 	return n
 }
 
@@ -49,4 +53,9 @@ func (n *FuncNode) SrcFunc() *src.Func {
 // Parent returns the parent node or nil, if it is the root of the tree.
 func (n *FuncNode) Parent() Node {
 	return n.parent
+}
+
+// Annotations returns all registered annotations.
+func (n *FuncNode) Annotations() []*AnnotationNode {
+	return n.annotations
 }

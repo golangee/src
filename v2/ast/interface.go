@@ -7,6 +7,7 @@ type InterfaceNode struct {
 	parent       Node
 	srcInterface *src.Interface
 	methods      []*FuncNode
+	annotations  []*AnnotationNode
 	*payload
 }
 
@@ -21,6 +22,10 @@ func NewInterfaceNode(parent Node, iface *src.Interface) *InterfaceNode {
 
 	for _, f := range iface.Methods() {
 		n.methods = append(n.methods, NewFuncNode(n, f))
+	}
+
+	for _, annotation := range iface.Annotations() {
+		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
 	}
 
 	return n
@@ -39,4 +44,9 @@ func (n *InterfaceNode) Methods() []*FuncNode {
 // Parent returns the parent node or nil, if it is the root of the tree.
 func (n *InterfaceNode) Parent() Node {
 	return n.parent
+}
+
+// Annotations returns all registered annotations.
+func (n *InterfaceNode) Annotations() []*AnnotationNode {
+	return n.annotations
 }

@@ -9,12 +9,13 @@ var _ NamedType = (*Struct)(nil)
 // exclusive use (they are just syntax sugar for a class with final members). In contrast to that, Go cannot express
 // final fields.
 type Struct struct {
-	doc        string
-	name       string
-	visibility Visibility
-	fields     []*Field
-	final      bool
-	static     bool
+	doc         string
+	name        string
+	visibility  Visibility
+	fields      []*Field
+	final       bool
+	static      bool
+	annotations []*Annotation
 }
 
 // NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
@@ -86,4 +87,16 @@ func (s *Struct) AddFields(fields ...*Field) *Struct {
 // Fields returns the currently configured fields.
 func (s *Struct) Fields() []*Field {
 	return s.fields
+}
+
+// Annotations returns the backing slice of all annotations.
+func (s *Struct) Annotations() []*Annotation {
+	return s.annotations
+}
+
+// AddAnnotations appends the given annotations. Note that not all render targets support type annotations, e.g.
+// like Go.
+func (s *Struct) AddAnnotations(a ...*Annotation) *Struct {
+	s.annotations = append(s.annotations, a...)
+	return s
 }

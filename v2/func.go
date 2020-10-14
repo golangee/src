@@ -12,6 +12,7 @@ type Func struct {
 	results       []*Param
 	body          interface{}
 	variadic      bool
+	annotations   []*Annotation
 }
 
 // NewFunc allocates a new parameterless function with a calling name.
@@ -135,4 +136,16 @@ func (s *Func) Variadic() bool {
 // SetVariadic updates the variadic state of the last parameter.
 func (s *Func) SetVariadic(variadic bool) {
 	s.variadic = variadic
+}
+
+// Annotations returns the backing slice of all annotations.
+func (s *Func) Annotations() []*Annotation {
+	return s.annotations
+}
+
+// AddAnnotations appends the given annotations. Note that not all render targets support method annotations, e.g.
+// like Go.
+func (s *Func) AddAnnotations(a ...*Annotation) *Func {
+	s.annotations = append(s.annotations, a...)
+	return s
 }

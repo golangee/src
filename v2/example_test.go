@@ -116,6 +116,10 @@ func NewTranspilerModel() *src.Module {
 
 						src.NewInterface("MyInterface").
 							SetDoc("...shows how to use interfaces.").
+							AddAnnotations(
+								src.NewAnnotation("javax.persistence.Entity").SetDefault(`"testEntity"`),
+								src.NewAnnotation("javax.persistence.Table").SetDefault(`"testTable"`),
+							).
 							AddMethods(
 								src.NewFunc("sayHello").
 									SetDoc("...says hello to the world.").
@@ -127,17 +131,22 @@ func NewTranspilerModel() *src.Module {
 									),
 								src.NewFunc("sayHello3").
 									SetDoc("...says hello to the world.").
+									AddAnnotations(
+										src.NewAnnotation("javax.persistence.Entity").SetDefault(`"testEntity"`),
+										src.NewAnnotation("javax.persistence.Table").SetDefault(`"testTable"`),
+									).
 									AddParams(
 										src.NewParam("limit", src.NewSimpleTypeDecl(stdlib.Int)).
+											AddAnnotations(src.NewAnnotation("javax.persistence.Entity").SetDefault(`"testEntity"`)).
 											SetDoc("...provides the maximum amount of stuff returned."),
 										src.NewParam("offset", src.NewSimpleTypeDecl(stdlib.Int64)).
-											SetDoc("...declared the row from which to start the return."),
+											SetDoc("...declares the row from which to start the return."),
 									).
 									AddResults(
 										src.NewParam("", src.NewSimpleTypeDecl(stdlib.String)).
 											SetDoc("...is a weired string result."),
 										src.NewParam("", src.NewSimpleTypeDecl("Exception")).
-											SetDoc("...is thrown if something went seriously wrong."),
+											SetDoc("...if something went seriously wrong."),
 									),
 							),
 

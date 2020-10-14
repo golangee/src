@@ -2,9 +2,10 @@ package src
 
 // A Param represents a functional input or output parameter.
 type Param struct {
-	doc      string
-	name     string
-	typeDecl TypeDecl
+	doc         string
+	name        string
+	typeDecl    TypeDecl
+	annotations []*Annotation
 }
 
 // NewParam returns a new named parameter. It is valid to have unnamed parameters in go.
@@ -53,4 +54,16 @@ func (p *Param) TypeDecl() TypeDecl {
 // String returns a debugging representation.
 func (p *Param) String() string {
 	return p.name + " " + p.typeDecl.String()
+}
+
+// Annotations returns the backing slice of all annotations.
+func (p *Param) Annotations() []*Annotation {
+	return p.annotations
+}
+
+// AddAnnotations appends the given annotations. Note that not all render targets support parameter annotations, e.g.
+// like Go.
+func (p *Param) AddAnnotations(a ...*Annotation) *Param {
+	p.annotations = append(p.annotations, a...)
+	return p
 }

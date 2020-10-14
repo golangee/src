@@ -9,6 +9,7 @@ type StructNode struct {
 	parent    *TypeNode
 	srcStruct *src.Struct
 	fields    []*FieldNode
+	annotations  []*AnnotationNode
 	*payload
 }
 
@@ -23,6 +24,10 @@ func NewStructNode(parent *TypeNode, srcStruct *src.Struct) *StructNode {
 
 	for _, field := range srcStruct.Fields() {
 		n.fields = append(n.fields, NewFieldNode(n, field))
+	}
+
+	for _, annotation := range srcStruct.Annotations() {
+		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
 	}
 
 	return n
@@ -41,4 +46,9 @@ func (n *StructNode) Fields() []*FieldNode {
 // Parent returns the parent node or nil, if it is the root of the tree.
 func (n *StructNode) Parent() Node {
 	return n.parent
+}
+
+// Annotations returns all registered annotations.
+func (n *StructNode) Annotations() []*AnnotationNode {
+	return n.annotations
 }

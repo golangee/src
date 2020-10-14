@@ -10,6 +10,7 @@ type Interface struct {
 	name       string
 	visibility Visibility
 	methods    []*Func
+	annotations []*Annotation
 }
 
 // NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
@@ -64,5 +65,17 @@ func (s *Interface) Methods() []*Func {
 // AddMethods appends more methods to this interfaces contract.
 func (s *Interface) AddMethods(f ...*Func) *Interface {
 	s.methods = append(s.methods, f...)
+	return s
+}
+
+// Annotations returns the backing slice of all annotations.
+func (s *Interface) Annotations() []*Annotation {
+	return s.annotations
+}
+
+// AddAnnotations appends the given annotations. Note that not all render targets support type annotations, e.g.
+// like Go.
+func (s *Interface) AddAnnotations(a ...*Annotation) *Interface {
+	s.annotations = append(s.annotations, a...)
 	return s
 }

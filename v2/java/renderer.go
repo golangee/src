@@ -61,6 +61,14 @@ func renderType(t *ast.TypeNode, w *src.BufferedWriter) error {
 
 func renderInterface(node *ast.InterfaceNode, w *src.BufferedWriter) error {
 	writeComment(w, node.SrcInterface().Name(), node.SrcInterface().Doc())
+
+	for _, annotation := range node.Annotations() {
+		if err := renderAnnotation(annotation, w); err != nil {
+			return err
+		}
+		w.Printf("\n")
+	}
+
 	w.Printf(visibilityAsKeyword(node.SrcInterface().Visibility()))
 
 	w.Printf(" interface %s {\n", node.SrcInterface().Name())
@@ -76,6 +84,14 @@ func renderInterface(node *ast.InterfaceNode, w *src.BufferedWriter) error {
 
 func renderStruct(node *ast.StructNode, w *src.BufferedWriter) error {
 	writeComment(w, node.SrcStruct().Name(), node.SrcStruct().Doc())
+
+	for _, annotation := range node.Annotations() {
+		if err := renderAnnotation(annotation, w); err != nil {
+			return err
+		}
+		w.Printf("\n")
+	}
+
 	w.Printf(visibilityAsKeyword(node.SrcStruct().Visibility()))
 	if node.SrcStruct().Final() {
 		w.Printf(" final ")
@@ -135,6 +151,13 @@ func renderFunc(node *ast.FuncNode, w *src.BufferedWriter) error {
 
 	// we ignore the visibility entirely, because in Java interfaces methods are always public
 
+	for _, annotation := range node.Annotations() {
+		if err := renderAnnotation(annotation, w); err != nil {
+			return err
+		}
+		w.Printf("\n")
+	}
+
 	if len(node.OutputParams()) == 0 {
 		w.Printf("void ")
 	} else {
@@ -146,6 +169,14 @@ func renderFunc(node *ast.FuncNode, w *src.BufferedWriter) error {
 	w.Printf(node.SrcFunc().Name())
 	w.Printf("(")
 	for i, parameterNode := range node.InputParams() {
+		for _, annotationNode := range parameterNode.Annotations() {
+			if err := renderAnnotation(annotationNode, w); err != nil {
+				return err
+			}
+
+			w.Printf(" ")
+		}
+
 		if err := renderTypeDecl(parameterNode.TypeDecl(), w); err != nil {
 			return err
 		}
