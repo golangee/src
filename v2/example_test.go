@@ -18,6 +18,8 @@ func createFieldTable() []*src.Field {
 			continue
 		case stdlib.Map:
 			continue
+		case stdlib.Void:
+			continue
 		}
 
 		visibility := src.Public
@@ -118,6 +120,25 @@ func NewTranspilerModel() *src.Module {
 								src.NewFunc("sayHello").
 									SetDoc("...says hello to the world.").
 									SetVisibility(src.Private),
+								src.NewFunc("sayHello2").
+									SetDoc("...says hello to the world.").
+									AddResults(
+										src.NewParam("", src.NewSimpleTypeDecl(stdlib.Void)),
+									),
+								src.NewFunc("sayHello3").
+									SetDoc("...says hello to the world.").
+									AddParams(
+										src.NewParam("limit", src.NewSimpleTypeDecl(stdlib.Int)).
+											SetDoc("...provides the maximum amount of stuff returned."),
+										src.NewParam("offset", src.NewSimpleTypeDecl(stdlib.Int64)).
+											SetDoc("...declared the row from which to start the return."),
+									).
+									AddResults(
+										src.NewParam("", src.NewSimpleTypeDecl(stdlib.String)).
+											SetDoc("...is a weired string result."),
+										src.NewParam("", src.NewSimpleTypeDecl("Exception")).
+											SetDoc("...is thrown if something went seriously wrong."),
+									),
 							),
 
 					),

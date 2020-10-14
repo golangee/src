@@ -48,6 +48,10 @@ const (
 
 	// Rune represents a 32bit unicode codepoint.
 	Rune = "rune!"
+
+	// Void represents nothing and should only be used for languages which requires to say that nothing is really
+	// nothing.
+	Void = "void!"
 )
 
 // Types returns all defined standard library transpiler types.
@@ -68,4 +72,5 @@ var Types = []string{
 	Duration,
 	URL,
 	Rune,
+	Void,
 }

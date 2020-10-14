@@ -7,16 +7,38 @@ type FuncNode struct {
 	parent  Node
 	srcFunc *src.Func
 	*payload
+	params  []*ParameterNode
+	results []*ParameterNode
 }
 
 // NewFuncNode wraps the given instance and creates a sub tree with parent/children relations to
 // create a foundation for context-aware renderers.
 func NewFuncNode(parent Node, fun *src.Func) *FuncNode {
-	return &FuncNode{
+	n := &FuncNode{
 		parent:  parent,
 		srcFunc: fun,
 		payload: newPayload(),
 	}
+
+	for _, param := range fun.Params() {
+		n.params = append(n.params, NewParameterNode(n, param))
+	}
+
+	for _, param := range fun.Results() {
+		n.results = append(n.results, NewParameterNode(n, param))
+	}
+
+	return n
+}
+
+// InputParams returns the wrapped input parameter declarations.
+func (n *FuncNode) InputParams() []*ParameterNode {
+	return n.params
+}
+
+// OutputParams returns the wrapped input parameter declarations.
+func (n *FuncNode) OutputParams() []*ParameterNode {
+	return n.results
 }
 
 // SrcFunc returns the original func.

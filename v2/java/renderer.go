@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/golangee/src/v2"
 	"github.com/golangee/src/v2/ast"
-	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 const mimeTypeJava = "application/java"
@@ -97,19 +97,85 @@ func renderStruct(node *ast.StructNode, w *src.BufferedWriter) error {
 }
 
 func renderFunc(node *ast.FuncNode, w *src.BufferedWriter) error {
-	writeComment(w, node.SrcFunc().Name(), node.SrcFunc().Doc())
-	w.Printf(visibilityAsKeyword(node.SrcFunc().Visibility()))
-	w.Printf(" ")
-	if len(node.SrcFunc().Results()) == 0 {
+	comment := &strings.Builder{}
+	comment.WriteString(node.SrcFunc().Doc())
+	comment.WriteString("\n\n")
+
+	for _, parameterNode := range node.InputParams() {
+		if parameterNode.SrcParameter().Doc() == "" {
+			continue
+		}
+
+		comment.WriteString("@param ")
+		name := parameterNode.SrcParameter().Name()
+		if name == "" {
+			name = fromStdlib(src.Name(parameterNode.SrcParameter().TypeDecl().String())).Identifier()
+		}
+
+		comment.WriteString(deEllipsis(name, parameterNode.SrcParameter().Doc()))
+		comment.WriteString("\n")
+	}
+
+	for i, parameterNode := range node.OutputParams() {
+		if i == 0 || parameterNode.SrcParameter().Doc() == "" {
+			continue
+		}
+
+		comment.WriteString("@throws ")
+		name := parameterNode.SrcParameter().Name()
+		if name == "" {
+			name = fromStdlib(src.Name(parameterNode.SrcParameter().TypeDecl().String())).Identifier()
+		}
+
+		comment.WriteString(deEllipsis(name, parameterNode.SrcParameter().Doc()))
+		comment.WriteString("\n")
+	}
+
+	writeComment(w, node.SrcFunc().Name(), comment.String())
+
+	// we ignore the visibility entirely, because in Java interfaces methods are always public
+
+	if len(node.OutputParams()) == 0 {
 		w.Printf("void ")
 	} else {
-		/*(node * typeDeclNode, w * src.BufferedWriter)
-		node.srcFunc.Results()[0].
-			renderTypeDecl()*/
+		if err := renderTypeDecl(node.OutputParams()[0].TypeDecl(), w); err != nil {
+			return err
+		}
+		w.Printf(" ")
 	}
 	w.Printf(node.SrcFunc().Name())
 	w.Printf("(")
+	for i, parameterNode := range node.InputParams() {
+		if err := renderTypeDecl(parameterNode.TypeDecl(), w); err != nil {
+			return err
+		}
+
+		w.Printf(" ")
+		w.Printf(parameterNode.SrcParameter().Name())
+
+		if i < len(node.OutputParams())-1 {
+			w.Printf(", ")
+		}
+	}
 	w.Printf(")")
+
+	// by convention this must be throwables in Java
+	if len(node.OutputParams()) > 1 {
+		w.Printf("throws ")
+		for i, parameterNode := range node.OutputParams() {
+			if i == 0 {
+				continue
+			}
+
+			if err := renderTypeDecl(parameterNode.TypeDecl(), w); err != nil {
+				return err
+			}
+
+			if i < len(node.OutputParams())-1 {
+				w.Printf(", ")
+			}
+		}
+	}
 
 	if node.SrcFunc().Body() == nil {
 		w.Printf(";")
@@ -242,50 +308,4 @@ func visibilityAsKeyword(v src.Visibility) string {
 		panic("visibility not implemented: " + strconv.Itoa(int(v)))
 	}
 
-}
-
-// Render emits the declared module as a java project.
-func Render(mod *src.Module) ([]src.RenderedFile, error) {
-	var res []src.RenderedFile
-
-	tree := ast.NewModNode(mod)
-	installImporter(tree)
-
-	for _, p := range tree.Packages() {
-		if p.SrcPackage().Doc() != "" {
-			pDoc := src.NewSrcFile(packageJavaDocFile)
-			pDoc.SetDoc(p.SrcPackage().Doc())
-			pDoc.SetDocPreamble(p.SrcPackage().DocPreamble())
-			docNode := ast.NewSrcFileNode(p, pDoc)
-			docNode.SetValue(importerId, newImporter())
-			buf, err := renderFile(docNode)
-			if err != nil {
-				panic("illegal state: " + err.Error() + ": " + string(buf))
-			}
-
-			res = append(res, src.RenderedFile{
-				AbsoluteFileName: filepath.Join(p.SrcPackage().ImportPath(), docNode.SrcFile().Name()+".java"),
-				MimeType:         mimeTypeJava,
-				Buf:              buf,
-				Error:            err,
-			})
-
-		}
-
-		for _, file := range p.Files() {
-			buf, err := renderFile(file)
-			res = append(res, src.RenderedFile{
-				AbsoluteFileName: filepath.Join(p.SrcPackage().ImportPath(), file.SrcFile().Name()+".java"),
-				MimeType:         mimeTypeJava,
-				Buf:              buf,
-				Error:            err,
-			})
-
-			if err != nil {
-				return res, fmt.Errorf("unable to render %s/%s: %w", p.SrcPackage().ImportPath(), file.SrcFile().Name(), err)
-			}
-		}
-	}
-
-	return res, nil
 }

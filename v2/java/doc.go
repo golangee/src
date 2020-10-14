@@ -1,32 +1,55 @@
+// Package java provides a renderer for Java 1.15 source code.
 package java
 
-import "strings"
+import (
+	"fmt"
+	"github.com/golangee/src/v2"
+	"github.com/golangee/src/v2/ast"
+	"path/filepath"
+)
 
-// formatComment replaces a '...' prefix with the ellipsisName and prefixes all lines
-// with a ' * '. Also a new first line (/**) and a new last line ( */) is added.
-func formatComment(ellipsisName, doc string) string {
-	doc = strings.TrimSpace(doc)
-	if len(doc) > 0 {
-		tmp := &strings.Builder{}
-		if strings.HasPrefix(doc, "...") {
-			tmp.WriteString(ellipsisName)
-			tmp.WriteString(" ")
-			tmp.WriteString(strings.TrimSpace(doc[3:]))
-		} else {
-			tmp.WriteString(doc)
-		}
-		str := tmp.String()
-		tmp.Reset()
-		tmp.WriteString("/**\n")
-		for _, line := range strings.Split(str, "\n") {
-			tmp.WriteString(" * ")
-			tmp.WriteString(line)
-			tmp.WriteString("\n")
-		}
-		tmp.WriteString(" */")
+// Render emits the declared module as a java project.
+func Render(mod *src.Module) ([]src.RenderedFile, error) {
+	var res []src.RenderedFile
 
-		return tmp.String()
+	tree := ast.NewModNode(mod)
+	installImporter(tree)
+
+	for _, p := range tree.Packages() {
+		if p.SrcPackage().Doc() != "" {
+			pDoc := src.NewSrcFile(packageJavaDocFile)
+			pDoc.SetDoc(p.SrcPackage().Doc())
+			pDoc.SetDocPreamble(p.SrcPackage().DocPreamble())
+			docNode := ast.NewSrcFileNode(p, pDoc)
+			docNode.SetValue(importerId, newImporter())
+			buf, err := renderFile(docNode)
+			if err != nil {
+				panic("illegal state: " + err.Error() + ": " + string(buf))
+			}
+
+			res = append(res, src.RenderedFile{
+				AbsoluteFileName: filepath.Join(p.SrcPackage().ImportPath(), docNode.SrcFile().Name()+".java"),
+				MimeType:         mimeTypeJava,
+				Buf:              buf,
+				Error:            err,
+			})
+
+		}
+
+		for _, file := range p.Files() {
+			buf, err := renderFile(file)
+			res = append(res, src.RenderedFile{
+				AbsoluteFileName: filepath.Join(p.SrcPackage().ImportPath(), file.SrcFile().Name()+".java"),
+				MimeType:         mimeTypeJava,
+				Buf:              buf,
+				Error:            err,
+			})
+
+			if err != nil {
+				return res, fmt.Errorf("unable to render %s/%s: %w", p.SrcPackage().ImportPath(), file.SrcFile().Name(), err)
+			}
+		}
 	}
 
-	return ""
+	return res, nil
 }

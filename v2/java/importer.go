@@ -32,7 +32,6 @@ func installImporter(n *ast.ModNode) {
 
 // importerFromTree walks up the tree until it finds the first importer from any ast.Node.Value.
 func importerFromTree(n ast.Node) *importer {
-
 	root := n
 	for root != nil {
 		if imp, ok := root.Value(importerId).(*importer); ok {

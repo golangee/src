@@ -103,14 +103,14 @@ func (s *Func) Results() []*Param {
 
 // SetResults updates the backing array of the out parameters. In languages which only support none (void) or
 // one result, all following parameters are treated as Exceptions.
-func (s *Func) SetResults(results []*Param) *Func {
+func (s *Func) SetResults(results ...*Param) *Func {
 	s.results = results
 	return s
 }
 
 // AddResults appends to the backing array of the out parameters. In languages which only support none (void) or
 // one result, all following parameters are treated as Exceptions.
-func (s *Func) AddResults(results []*Param) *Func {
+func (s *Func) AddResults(results ...*Param) *Func {
 	s.results = append(s.results, results...)
 	return s
 }

@@ -34,6 +34,11 @@ func (p *Param) SetName(name string) *Param {
 	return p
 }
 
+// Name returns the parameters name.
+func (p *Param) Name() string {
+	return p.name
+}
+
 // SetTypeDecl updates the type declaration of the parameter.
 func (p *Param) SetTypeDecl(t TypeDecl) *Param {
 	p.typeDecl = t

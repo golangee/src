@@ -62,6 +62,10 @@ func fromStdlib(name src.Name) src.Name {
 		// in Java this is just an int, using chars is broken and legacy code, see
 		// https://docs.oracle.com/javase/tutorial/i18n/text/characterClass.html
 		return "int"
+
+	case stdlib.Void:
+		return "void"
+
 	default:
 		if strings.HasSuffix(string(name), "!") {
 			panic("not a stdlib type: " + string(name))

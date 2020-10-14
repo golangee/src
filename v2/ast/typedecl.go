@@ -294,7 +294,6 @@ func (n *GenericTypeDeclNode) sealedTypeDeclNode() {
 type FuncTypeDeclNode struct {
 	parent          Node
 	srcFuncTypeDecl *src.FuncTypeDecl
-	typeDecl        TypeDeclNode
 	params          []*ParameterNode
 	results         []*ParameterNode
 	*payload
@@ -324,10 +323,6 @@ func (n *FuncTypeDeclNode) SrcFuncTypeDecl() *src.FuncTypeDecl {
 	return n.srcFuncTypeDecl
 }
 
-// TypeDecl returns the wrapped base type declaration which is parameterized by Params.
-func (n *FuncTypeDeclNode) TypeDecl() TypeDeclNode {
-	return n.typeDecl
-}
 
 // InputParams returns the wrapped input parameter declarations.
 func (n *FuncTypeDeclNode) InputParams() []*ParameterNode {
