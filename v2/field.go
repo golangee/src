@@ -81,7 +81,7 @@ type Annotation struct {
 	values map[string]string
 }
 
-// NewAnnotation creates a new named Annotation. In Go the name is just interpreted as a string and has further
+// NewAnnotation creates a new named Annotation. In Go the name is just interpreted as a string and has no further
 // meaning.
 func NewAnnotation(name Name) *Annotation {
 	return &Annotation{

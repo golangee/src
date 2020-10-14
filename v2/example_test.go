@@ -6,6 +6,7 @@ import (
 	"github.com/golangee/src/v2/golang"
 	"github.com/golangee/src/v2/java"
 	"github.com/golangee/src/v2/stdlib"
+	"strconv"
 	"testing"
 )
 
@@ -60,17 +61,24 @@ func createFieldTable() []*src.Field {
 	)
 
 	res = append(res,
-		src.NewField("fieldArray", src.NewArrayTypeDecl(5,src.NewSimpleTypeDecl(stdlib.Int))).
+		src.NewField("fieldArray", src.NewArrayTypeDecl(5, src.NewSimpleTypeDecl(stdlib.Int))).
 			SetDoc("...is an array with exact 5 int elements").
+			AddAnnotations(
+				src.NewAnnotation("javax.xml.ws.ServiceMode").SetDefault("javax.xml.ws.Service.Mode.PAYLOAD"),
+			).
 			SetVisibility(src.Public),
 	)
 
 	res = append(res,
 		src.NewField("fieldComplex", src.NewTypeDeclPtr(src.NewMapDecl(src.NewTypeDeclPtr(src.NewSimpleTypeDecl(stdlib.String)), src.NewListDecl(src.NewListDecl(src.NewSimpleTypeDecl(stdlib.Int)))))).
 			SetDoc("...is a pointer to a map with keys, which are pointers to a string and values are a list of list of integer").
+			AddAnnotations(
+				src.NewAnnotation("javax.xml.ws.WebServiceRef").
+					SetValue("mappedName", strconv.Quote("abc mapped name")).
+					SetValue("type", "String.class"),
+			).
 			SetVisibility(src.Public),
 	)
-
 
 	return res
 }

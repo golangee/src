@@ -72,6 +72,11 @@ func renderStruct(node *structNode, w *src.BufferedWriter) error {
 
 func renderField(node *fieldNode, w *src.BufferedWriter) error {
 	writeComment(w, node.srcField.Name(), node.srcField.Doc())
+	for _, annotation := range node.annotations {
+		if err := renderAnnotation(annotation, w); err != nil {
+			return err
+		}
+	}
 	w.Printf(visibilityAsKeyword(node.srcField.Visibility()))
 	w.Printf(" ")
 	if err := renderTypeDecl(node.typeDeclNode, w); err != nil {
@@ -80,6 +85,35 @@ func renderField(node *fieldNode, w *src.BufferedWriter) error {
 	w.Printf(" ")
 	w.Printf(node.srcField.Name())
 	w.Printf(";\n")
+
+	return nil
+}
+
+func renderAnnotation(node *annotationNode, w *src.BufferedWriter) error {
+	importer := importerFromTree(node)
+
+	w.Printf("@")
+	w.Printf(string(importer.shortify(node.srcAnnotation.Name())))
+	attrs := node.srcAnnotation.Attributes()
+	if len(attrs) > 0 {
+		w.Printf("(")
+		// the default case
+		if len(attrs) == 1 && attrs[0] == "" {
+			w.Printf(node.srcAnnotation.Value(""))
+		} else {
+			// the named attribute cases
+			for i, attr := range attrs {
+				w.Printf(attr)
+				w.Printf(" = ")
+				w.Printf(node.srcAnnotation.Value(attr))
+				if i < len(attrs)-1 {
+					w.Printf(", ")
+				}
+			}
+		}
+
+		w.Printf(")")
+	}
 
 	return nil
 }
