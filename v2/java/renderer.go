@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const mimeTypeJava = "application/java"
+const mimeTypeJava = "text/x-java-source"
 const packageJavaDocFile = "package-info"
 
 func writeComment(w *src.BufferedWriter, name, doc string) {
@@ -34,6 +34,30 @@ func renderFile(file *ast.SrcFileNode) ([]byte, error) {
 	tmp := &src.BufferedWriter{}
 	for _, typ := range file.Types() {
 		if err := renderType(typ, tmp); err != nil {
+			return nil, err
+		}
+	}
+
+	// ugly: we may have source file level functions, which are impossible in Java,
+	// so we create a new class named <filename>Functions use it to render the functions.
+	// This will be package-private only. An alternative would be to pull this up into
+	if len(file.SrcFile().Functions()) > 0 {
+		artificialHolder := src.NewStruct(file.SrcFile().Name() + "Functions").
+			SetDoc("...is introduced to hold static utility functions.").
+			SetVisibility(src.PackagePrivate)
+
+		// private constructor
+		artificialHolder.AddMethods(
+			src.NewFunc(artificialHolder.Name()).
+				SetVisibility(src.Private).
+				SetDoc("...is a private constructor because this class only contains static methods.").
+				SetBody(src.NewBlock()),
+		)
+
+		artificialHolder.AddMethods(file.SrcFile().Functions()...)
+		node := ast.NewTypeNode(file, artificialHolder)
+
+		if err := renderType(node, tmp); err != nil {
 			return nil, err
 		}
 	}
@@ -177,7 +201,15 @@ func renderFunc(node *ast.FuncNode, w *src.BufferedWriter) error {
 
 	writeComment(w, node.SrcFunc().Name(), comment.String())
 
-	// we ignore the visibility entirely, because in Java interfaces methods are always public
+	if _, ok := node.Parent().(*ast.InterfaceNode); ok {
+		// we ignore the visibility entirely, because in Java interfaces methods are always public
+	} else {
+		w.Printf(visibilityAsKeyword(node.SrcFunc().Visibility()))
+		w.Printf(" ")
+		if node.SrcFunc().Static() {
+			w.Printf("static ")
+		}
+	}
 
 	for _, annotation := range node.Annotations() {
 		if err := renderAnnotation(annotation, w); err != nil {
@@ -187,7 +219,12 @@ func renderFunc(node *ast.FuncNode, w *src.BufferedWriter) error {
 	}
 
 	if len(node.OutputParams()) == 0 {
-		w.Printf("void ")
+		parentType := ast.ParentTypeNode(node)
+		if node.SrcFunc().Name() == parentType.SrcNamedType().Name() {
+			// special case, if we are a constructor, we omit also the void
+		} else {
+			w.Printf("void ")
+		}
 	} else {
 		if err := renderTypeDecl(node.OutputParams()[0].TypeDecl(), w); err != nil {
 			return err
@@ -209,7 +246,12 @@ func renderFunc(node *ast.FuncNode, w *src.BufferedWriter) error {
 			return err
 		}
 
-		w.Printf(" ")
+		if i == len(node.InputParams())-1 && node.SrcFunc().Variadic() {
+			w.Printf("...")
+		} else {
+			w.Printf(" ")
+		}
+
 		w.Printf(parameterNode.SrcParameter().Name())
 
 		if i < len(node.OutputParams())-1 {

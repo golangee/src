@@ -6,6 +6,7 @@ type SrcFile struct {
 	types       []NamedType
 	docPreamble string
 	doc         string
+	methods     []*Func
 }
 
 // NewSrcFile creates a new source file. Do not add the according file extension. E.g. instead of using
@@ -50,4 +51,20 @@ func (f *SrcFile) SetDoc(doc string) *SrcFile {
 // Doc returns the package documentation.
 func (f *SrcFile) Doc() string {
 	return f.doc
+}
+
+// Functions returns all available functions.
+func (f *SrcFile) Functions() []*Func {
+	return f.methods
+}
+
+// AddFunctions appends more functions to this source file. The rendering in targets like Java is questionable,
+// because not possible. So the Java renderer inserts them as static functions into a package private class
+// named <filename>Functions.
+func (f *SrcFile) AddFunctions(funcs ...*Func) *SrcFile {
+	f.methods = append(f.methods, funcs...)
+	for _, f := range funcs {
+		f.SetStatic(true)
+	}
+	return f
 }

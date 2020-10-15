@@ -5,6 +5,7 @@ package src
 type Func struct {
 	doc           string
 	name          string
+	static        bool
 	visibility    Visibility
 	recName       string
 	isPtrReceiver bool
@@ -30,7 +31,6 @@ func (s *Func) SetName(name string) *Func {
 	s.name = name
 	return s
 }
-
 
 // SetVisibility sets the visibility. The default is Public.
 func (s *Func) SetVisibility(v Visibility) *Func {
@@ -131,8 +131,9 @@ func (s *Func) Variadic() bool {
 }
 
 // SetVariadic updates the variadic state of the last parameter.
-func (s *Func) SetVariadic(variadic bool) {
+func (s *Func) SetVariadic(variadic bool) *Func {
 	s.variadic = variadic
+	return s
 }
 
 // Annotations returns the backing slice of all annotations.
@@ -145,4 +146,17 @@ func (s *Func) Annotations() []*Annotation {
 func (s *Func) AddAnnotations(a ...*Annotation) *Func {
 	s.annotations = append(s.annotations, a...)
 	return s
+}
+
+// SetStatic updates the static flag of the method. This declares a method to be not part of the according
+// instance and it will not be able to modify its receiver instance, so the PtrReceiver flag is ignored.
+// In Java, this will cause the renderer to emit a class scoped method.
+func (s *Func) SetStatic(b bool) *Func {
+	s.static = b
+	return s
+}
+
+// Static returns the static flag.
+func (s *Func) Static() bool {
+	return s.static
 }

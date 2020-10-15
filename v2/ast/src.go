@@ -7,6 +7,7 @@ type SrcFileNode struct {
 	parent  *PkgNode
 	srcFile *src.SrcFile
 	types   []*TypeNode
+	mimeType string
 	*payload
 }
 
@@ -16,6 +17,7 @@ func NewSrcFileNode(parent *PkgNode, file *src.SrcFile) *SrcFileNode {
 	n := &SrcFileNode{
 		parent:  parent,
 		srcFile: file,
+		mimeType:"application/octet-stream",
 		payload: newPayload(),
 	}
 
@@ -44,4 +46,11 @@ func (n *SrcFileNode) Types() []*TypeNode {
 // Parent returns the parent node or nil, if it is the root of the tree.
 func (n *SrcFileNode) Parent() Node {
 	return n.parent
+}
+
+// MimeType returns the current applied mime type. One of
+//  * Java: text/x-java-source
+//  * Go: text/x-go-source
+func (n *SrcFileNode) MimeType()string{
+	return n.mimeType
 }

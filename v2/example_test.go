@@ -115,7 +115,9 @@ func NewTranspilerModel() *src.Module {
 							AddFields(createFieldTable()...).
 							AddMethods(
 								src.NewFunc("HelloWorld").
-									SetDoc("...says hello world"),
+									SetDoc("...says hello world").
+									SetParams(src.NewParam("args", src.NewSimpleTypeDecl(stdlib.String))).
+									SetVariadic(true),
 							),
 
 						src.NewInterface("MyInterface").
@@ -161,7 +163,13 @@ func NewTranspilerModel() *src.Module {
 									),
 							),
 
+					).AddFunctions(
+					src.NewFunc("aUtilityFunc").
+						SetDoc("...is a stateless function.").
+						SetBody(src.NewBlock().
+							L(src.Name("fmt.Println")),
 					),
+				),
 			),
 	)
 	return mod
