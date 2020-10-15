@@ -31,9 +31,6 @@ func (s *Func) SetName(name string) *Func {
 	return s
 }
 
-func (s *Func) sealedNamedType() {
-	panic("implement me")
-}
 
 // SetVisibility sets the visibility. The default is Public.
 func (s *Func) SetVisibility(v Visibility) *Func {

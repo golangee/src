@@ -11,6 +11,7 @@ type Interface struct {
 	visibility Visibility
 	methods    []*Func
 	annotations []*Annotation
+	types       []NamedType
 }
 
 // NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
@@ -78,4 +79,17 @@ func (s *Interface) Annotations() []*Annotation {
 func (s *Interface) AddAnnotations(a ...*Annotation) *Interface {
 	s.annotations = append(s.annotations, a...)
 	return s
+}
+
+
+// AddTypes adds a bunch of named types. This is only allowed in Java and other renderers should
+// either ignore it or place them at the package level (Go).
+func (s *Interface) AddTypes(types ...NamedType) *Interface {
+	s.types = append(s.types, types...)
+	return s
+}
+
+// Types returns the backing slice of defined named types.
+func (s *Interface) Types() []NamedType {
+	return s.types
 }

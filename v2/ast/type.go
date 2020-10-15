@@ -7,7 +7,7 @@ import (
 
 // A TypeNode represents a (named) type declaration. Nameless or anonymous types may be legal.
 type TypeNode struct {
-	parent       *SrcFileNode
+	parent       Node
 	srcNamedType src.NamedType
 	namedNode    Node
 	*payload
@@ -15,7 +15,7 @@ type TypeNode struct {
 
 // NewTypeNode wraps the given instance and creates a sub tree with parent/children relations to
 // create a foundation for context-aware renderers.
-func NewTypeNode(parent *SrcFileNode, t src.NamedType) *TypeNode {
+func NewTypeNode(parent Node, t src.NamedType) *TypeNode {
 	n := &TypeNode{
 		parent:       parent,
 		srcNamedType: t,

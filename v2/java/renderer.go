@@ -48,7 +48,25 @@ func renderFile(file *ast.SrcFileNode) ([]byte, error) {
 	return Format(w.Bytes())
 }
 
+func renderTypePreamble(w *src.BufferedWriter, node interface {
+	Name() string
+	Doc() string
+	Annotations() []*ast.AnnotationNode
+}) error {
+	writeComment(w, node.Name(), node.Doc())
+
+	for _, annotation := range node.Annotations() {
+		if err := renderAnnotation(annotation, w); err != nil {
+			return err
+		}
+		w.Printf("\n")
+	}
+
+	return nil
+}
+
 func renderType(t *ast.TypeNode, w *src.BufferedWriter) error {
+
 	switch node := t.NamedNode().(type) {
 	case *ast.StructNode:
 		return renderStruct(node, w)
@@ -60,18 +78,20 @@ func renderType(t *ast.TypeNode, w *src.BufferedWriter) error {
 }
 
 func renderInterface(node *ast.InterfaceNode, w *src.BufferedWriter) error {
-	writeComment(w, node.SrcInterface().Name(), node.SrcInterface().Doc())
-
-	for _, annotation := range node.Annotations() {
-		if err := renderAnnotation(annotation, w); err != nil {
-			return err
-		}
-		w.Printf("\n")
+	if err := renderTypePreamble(w, node); err != nil {
+		return err
 	}
 
 	w.Printf(visibilityAsKeyword(node.SrcInterface().Visibility()))
 
 	w.Printf(" interface %s {\n", node.SrcInterface().Name())
+
+	for _, typeNode := range node.Types() {
+		if err := renderType(typeNode, w); err != nil {
+			return err
+		}
+	}
+
 	for _, fun := range node.Methods() {
 		if err := renderFunc(fun, w); err != nil {
 			return fmt.Errorf("failed to render func %s: %w", fun.SrcFunc().Name(), err)
@@ -83,13 +103,8 @@ func renderInterface(node *ast.InterfaceNode, w *src.BufferedWriter) error {
 }
 
 func renderStruct(node *ast.StructNode, w *src.BufferedWriter) error {
-	writeComment(w, node.SrcStruct().Name(), node.SrcStruct().Doc())
-
-	for _, annotation := range node.Annotations() {
-		if err := renderAnnotation(annotation, w); err != nil {
-			return err
-		}
-		w.Printf("\n")
+	if err := renderTypePreamble(w, node); err != nil {
+		return err
 	}
 
 	w.Printf(visibilityAsKeyword(node.SrcStruct().Visibility()))
@@ -102,9 +117,22 @@ func renderStruct(node *ast.StructNode, w *src.BufferedWriter) error {
 	}
 
 	w.Printf(" class %s {\n", node.SrcStruct().Name())
+
+	for _, typeNode := range node.Types() {
+		if err := renderType(typeNode, w); err != nil {
+			return err
+		}
+	}
+
 	for _, field := range node.Fields() {
 		if err := renderField(field, w); err != nil {
 			return fmt.Errorf("failed to render field %s: %w", field.SrcField().Name(), err)
+		}
+	}
+
+	for _, fun := range node.Methods() {
+		if err := renderFunc(fun, w); err != nil {
+			return fmt.Errorf("failed to render func %s: %w", fun.SrcFunc().Name(), err)
 		}
 	}
 	w.Printf("}\n")

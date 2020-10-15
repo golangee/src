@@ -112,13 +112,24 @@ func NewTranspilerModel() *src.Module {
 							SetDoc("...is a simple example of defining a class or struct.\n\n    Can we have newlines?").
 							SetFinal(true).
 							SetStatic(true).
-							AddFields(createFieldTable()...),
+							AddFields(createFieldTable()...).
+							AddMethods(
+								src.NewFunc("HelloWorld").
+									SetDoc("...says hello world"),
+							),
 
 						src.NewInterface("MyInterface").
 							SetDoc("...shows how to use interfaces.").
 							AddAnnotations(
 								src.NewAnnotation("javax.persistence.Entity").SetDefault(`"testEntity"`),
 								src.NewAnnotation("javax.persistence.Table").SetDefault(`"testTable"`),
+							).
+							AddTypes(
+								src.NewStruct("ANestedType").
+									SetDoc("... a cooler nested type").
+									AddFields(
+										src.NewField("aName", src.NewSimpleTypeDecl(stdlib.Int)),
+									),
 							).
 							AddMethods(
 								src.NewFunc("sayHello").

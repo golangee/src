@@ -8,6 +8,7 @@ type InterfaceNode struct {
 	srcInterface *src.Interface
 	methods      []*FuncNode
 	annotations  []*AnnotationNode
+	types        []*TypeNode
 	*payload
 }
 
@@ -28,7 +29,21 @@ func NewInterfaceNode(parent Node, iface *src.Interface) *InterfaceNode {
 		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
 	}
 
+	for _, namedType := range iface.Types() {
+		n.types = append(n.types, NewTypeNode(n, namedType))
+	}
+
 	return n
+}
+
+// Name returns the declared identifier which must be unique per package.
+func (n *InterfaceNode) Name() string {
+	return n.srcInterface.Name()
+}
+
+// Doc returns the package documentation.
+func (n *InterfaceNode) Doc() string {
+	return n.srcInterface.Doc()
 }
 
 // SrcInterface returns the original interface.
@@ -49,4 +64,9 @@ func (n *InterfaceNode) Parent() Node {
 // Annotations returns all registered annotations.
 func (n *InterfaceNode) Annotations() []*AnnotationNode {
 	return n.annotations
+}
+
+// Types returns all defines subtypes in the scope of this interface.
+func (n *InterfaceNode) Types() []*TypeNode {
+	return n.types
 }

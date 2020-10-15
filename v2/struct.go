@@ -16,6 +16,8 @@ type Struct struct {
 	final       bool
 	static      bool
 	annotations []*Annotation
+	types       []NamedType
+	methods     []*Func
 }
 
 // NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
@@ -98,5 +100,28 @@ func (s *Struct) Annotations() []*Annotation {
 // like Go.
 func (s *Struct) AddAnnotations(a ...*Annotation) *Struct {
 	s.annotations = append(s.annotations, a...)
+	return s
+}
+
+// AddTypes adds a bunch of named types. This is only allowed in Java and other renderers should
+// either ignore it or place them at the package level (Go).
+func (s *Struct) AddTypes(types ...NamedType) *Struct {
+	s.types = append(s.types, types...)
+	return s
+}
+
+// Types returns the backing slice of defined named types.
+func (s *Struct) Types() []NamedType {
+	return s.types
+}
+
+// Methods returns all available functions.
+func (s *Struct) Methods() []*Func {
+	return s.methods
+}
+
+// AddMethods appends more methods to this interfaces contract.
+func (s *Struct) AddMethods(f ...*Func) *Struct {
+	s.methods = append(s.methods, f...)
 	return s
 }
