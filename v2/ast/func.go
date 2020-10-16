@@ -10,6 +10,7 @@ type FuncNode struct {
 	params      []*ParameterNode
 	results     []*ParameterNode
 	annotations []*AnnotationNode
+	body        *BlockNode // optional, maybe nil
 }
 
 // NewFuncNode wraps the given instance and creates a sub tree with parent/children relations to
@@ -32,6 +33,11 @@ func NewFuncNode(parent Node, fun *src.Func) *FuncNode {
 	for _, annotation := range fun.Annotations() {
 		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
 	}
+
+	if fun.Body() != nil {
+		n.body = NewBlockNode(n, fun.Body())
+	}
+
 	return n
 }
 
@@ -53,6 +59,11 @@ func (n *FuncNode) SrcFunc() *src.Func {
 // Parent returns the parent node or nil, if it is the root of the tree.
 func (n *FuncNode) Parent() Node {
 	return n.parent
+}
+
+// Body may be nil.
+func (n *FuncNode) Body() *BlockNode {
+	return n.body
 }
 
 // Annotations returns all registered annotations.

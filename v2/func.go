@@ -11,7 +11,7 @@ type Func struct {
 	isPtrReceiver bool
 	params        []*Param
 	results       []*Param
-	body          interface{}
+	body          *Block
 	variadic      bool
 	annotations   []*Annotation
 }
@@ -114,12 +114,12 @@ func (s *Func) AddResults(results ...*Param) *Func {
 }
 
 // Body returns the implementation.
-func (s *Func) Body() interface{} {
+func (s *Func) Body() *Block {
 	return s.body
 }
 
 // SetBody updates the implementation.
-func (s *Func) SetBody(body interface{}) *Func {
+func (s *Func) SetBody(body *Block) *Func {
 	s.body = body
 	return s
 }

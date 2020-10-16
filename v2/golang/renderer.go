@@ -8,7 +8,7 @@ import (
 )
 
 const packageGoDocFile = "doc"
-const mimeTypeGo = "application/go"
+const mimeTypeGo = "text/x-go-source"
 
 func writeComment(w *src.BufferedWriter, name, doc string) {
 	myDoc := formatComment(name, doc)
