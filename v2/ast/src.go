@@ -4,10 +4,11 @@ import "github.com/golangee/src/v2"
 
 // SrcFileNode represents a compilation unit.
 type SrcFileNode struct {
-	parent  *PkgNode
-	srcFile *src.SrcFile
-	types   []*TypeNode
-	mimeType string
+	parent    *PkgNode
+	srcFile   *src.SrcFile
+	types     []*TypeNode
+	functions []*FuncNode
+	mimeType  string
 	*payload
 }
 
@@ -15,14 +16,18 @@ type SrcFileNode struct {
 // create a foundation for context-aware renderers.
 func NewSrcFileNode(parent *PkgNode, file *src.SrcFile) *SrcFileNode {
 	n := &SrcFileNode{
-		parent:  parent,
-		srcFile: file,
-		mimeType:"application/octet-stream",
-		payload: newPayload(),
+		parent:   parent,
+		srcFile:  file,
+		mimeType: "application/octet-stream",
+		payload:  newPayload(),
 	}
 
 	for _, namedType := range file.Types() {
 		n.types = append(n.types, NewTypeNode(n, namedType))
+	}
+
+	for _, fun := range file.Functions() {
+		n.functions = append(n.functions, NewFuncNode(n, fun))
 	}
 
 	return n
@@ -43,6 +48,11 @@ func (n *SrcFileNode) Types() []*TypeNode {
 	return n.types
 }
 
+// Functions returns the wrapped functions.
+func (n *SrcFileNode) Functions() []*FuncNode {
+	return n.functions
+}
+
 // Parent returns the parent node or nil, if it is the root of the tree.
 func (n *SrcFileNode) Parent() Node {
 	return n.parent
@@ -51,6 +61,6 @@ func (n *SrcFileNode) Parent() Node {
 // MimeType returns the current applied mime type. One of
 //  * Java: text/x-java-source
 //  * Go: text/x-go-source
-func (n *SrcFileNode) MimeType()string{
+func (n *SrcFileNode) MimeType() string {
 	return n.mimeType
 }

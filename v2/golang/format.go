@@ -3,6 +3,7 @@ package golang
 import (
 	"github.com/golangee/src/v2"
 	"go/format"
+	"strings"
 	"unicode"
 )
 
@@ -47,4 +48,42 @@ func MakePublic(str string) string {
 	default:
 		return string(unicode.ToUpper(rune(str[0]))) + str[1:]
 	}
+}
+
+// MakeIdentifier creates a public name out of the given string. If it just contains rubbish, at worst the empty
+// name _ is returned. - and _ are turned into upper case letters if possible.
+func MakeIdentifier(str string) string {
+	sb := &strings.Builder{}
+	nextUp := true
+	first := true
+	for _, r := range str {
+		if r == '-' || r == '_' || r == ' ' {
+			nextUp = true
+			continue
+		}
+
+		if first && r >= '0' && r <= '9' {
+			nextUp = true
+			continue
+		}
+
+		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')) {
+			nextUp = true
+			continue
+		}
+
+		first = false
+		if nextUp {
+			sb.WriteRune(unicode.ToUpper(r))
+			nextUp = false
+		} else {
+			sb.WriteRune(r)
+		}
+	}
+
+	if sb.Len() == 0 {
+		return "_"
+	}
+
+	return sb.String()
 }

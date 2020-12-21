@@ -294,6 +294,8 @@ func (n *GenericTypeDeclNode) sealedTypeDeclNode() {
 type FuncTypeDeclNode struct {
 	parent          Node
 	srcFuncTypeDecl *src.FuncTypeDecl
+	funcDecl        *src.Func
+	funcNode        *FuncNode
 	params          []*ParameterNode
 	results         []*ParameterNode
 	*payload
@@ -307,6 +309,12 @@ func NewFuncTypeDeclNode(parent Node, typeDecl *src.FuncTypeDecl) *FuncTypeDeclN
 		payload:         newPayload(),
 	}
 
+	// fake funcDecl
+	n.funcDecl = src.NewFunc("")
+	n.funcDecl.AddParams(typeDecl.InputParams()...)
+	n.funcDecl.AddResults(typeDecl.OutputParams()...)
+	n.funcNode = NewFuncNode(parent, n.funcDecl)
+
 	for _, decl := range typeDecl.InputParams() {
 		n.params = append(n.params, NewParameterNode(n, decl))
 	}
@@ -318,11 +326,20 @@ func NewFuncTypeDeclNode(parent Node, typeDecl *src.FuncTypeDecl) *FuncTypeDeclN
 	return n
 }
 
+// SrcFunc returns a fake prototype src.Func definition.
+func (n *FuncTypeDeclNode) SrcFunc() *src.Func {
+	return n.funcDecl
+}
+
+// Func returns a fake prototype FuncNode definition.
+func (n *FuncTypeDeclNode) Func() *FuncNode {
+	return n.funcNode
+}
+
 // SrcFuncTypeDecl returns the original declaration.
 func (n *FuncTypeDeclNode) SrcFuncTypeDecl() *src.FuncTypeDecl {
 	return n.srcFuncTypeDecl
 }
-
 
 // InputParams returns the wrapped input parameter declarations.
 func (n *FuncTypeDeclNode) InputParams() []*ParameterNode {

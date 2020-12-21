@@ -283,6 +283,11 @@ func (t *ArrayTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ArrayTypeDecl {
 	return t
 }
 
+// Len returns the declared array length.
+func (t *ArrayTypeDecl) Len() int {
+	return t.len
+}
+
 // String returns a debugging representation.
 func (t *ArrayTypeDecl) String() string {
 	return "[" + strconv.Itoa(t.len) + "]" + t.typeDecl.String()

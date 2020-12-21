@@ -20,7 +20,7 @@ func writeComment(w *src.BufferedWriter, name, doc string) {
 	}
 }
 
-// RenderFile tries to emit the file as java
+// renderFile tries to emit the file as java
 func renderFile(file *ast.SrcFileNode) ([]byte, error) {
 	w := &src.BufferedWriter{}
 

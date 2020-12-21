@@ -218,6 +218,6 @@ func TestGo(t *testing.T) {
 }
 
 func TestTranspiler(t *testing.T) {
-	//TestGo(t)
+	TestGo(t)
 	TestJava(t)
 }
