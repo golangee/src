@@ -15,42 +15,42 @@
 package src
 
 import (
+	"bytes"
 	"fmt"
-	"go/format"
 	"strings"
 )
 
+// Writer introduces a Printf contract.
 type Writer interface {
 	Printf(str string, args ...interface{})
 }
 
-type BufferedWriter strings.Builder
+// A BufferedWriter is just a strings builder with a Printf.
+type BufferedWriter bytes.Buffer
 
 func (b *BufferedWriter) Printf(format string, args ...interface{}) {
 	if len(args) == 0 {
-		(*strings.Builder)(b).WriteString(format)
+		(*bytes.Buffer)(b).WriteString(format)
 		return
 	}
 
-	(*strings.Builder)(b).WriteString(fmt.Sprintf(format, args...))
+	(*bytes.Buffer)(b).WriteString(fmt.Sprintf(format, args...))
 }
 
+// String returns the builders text.
 func (b *BufferedWriter) String() string {
-	return (*strings.Builder)(b).String()
+	return (*bytes.Buffer)(b).String()
 }
 
-func (b *BufferedWriter) Format() (string, error) {
-	buf, err := format.Source([]byte(b.String()))
-	if err != nil {
-		return b.WithLinesNumbers(), err
-	}
-
-	return string(buf), nil
+// Bytes returns the backing slice.
+func (b *BufferedWriter) Bytes() []byte {
+	return (*bytes.Buffer)(b).Bytes()
 }
 
-func (b *BufferedWriter) WithLinesNumbers() string {
+// WithLineNumbers puts a 1 based line number to the left and returns the text.
+func WithLineNumbers(text string) string {
 	sb := &strings.Builder{}
-	for i, line := range strings.Split(b.String(), "\n") {
+	for i, line := range strings.Split(text, "\n") {
 		sb.WriteString(fmt.Sprintf("%4d: %s\n", i+1, line))
 	}
 	return sb.String()

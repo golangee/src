@@ -1,139 +1,162 @@
-// Copyright 2020 Torben Schinke
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package src
 
-import "strings"
+import "fmt"
 
+// Java contains the mimetype for Java source code files.
+const Java = "text/x-java-source"
+
+// Go contains the mimetype for Go source code files.
+const Go = "text/x-go-source"
+
+// A Block defines a lexical scope where introduced variables usually shadow outer variables. Depending
+// on the occurrence of nesting (e.g. within a closure) other limitations (like effective final variables in Java)
+// needs to be respected (not in Go, but would perhaps have been better).
+//
+// Note that the logic here is a bit weired because it can be both: at first, very low level, by using
+// pure source code bytes and secondly very high level by just providing a limited set of primitives like
+// Var, New, Invoke or Call and others which will be translated into the according target language.
 type Block struct {
-	parent  FileProvider
-	emitter []Emitter
+	elements []interface{}
 }
 
-func NewBlock(line ...interface{}) *Block {
-	e := &Block{}
-	e.AddLine(line...)
-	return e
+// NewBlock creates a new lexical scope.
+func NewBlock() *Block {
+	return &Block{}
 }
 
-func (e *Block) File() *FileBuilder {
-	return e.parent.File()
+// P will render the given elements later using the %v directive.
+// Special handlings have:
+//  * TypeDecl and Name will be rendered using the import logic of the according renderer.
+//    This also includes the replacement of standard library types.
+//  * Block is recursively applied.
+//  * ast.Macro is called appropriately.
+//  * Macro is called appropriately.
+// TODO why not applying any src.* type? we could do inner classes, functions etc???
+func (b *Block) P(r ...interface{}) *Block {
+	b.elements = append(b.elements, r...)
+	return b
 }
 
-func (e *Block) NewLine() *Block {
-	e.emitter = append(e.emitter, SPrintf{
-		Str: "\n",
-	})
-	return e
+// L is like P but appends a new line at the end.
+func (b *Block) L(r ...interface{}) *Block {
+	b.elements = append(b.elements, r...)
+	return b
 }
 
-func (e *Block) Var(name string, decl *TypeDecl) *Block {
-	e.AddLine("var ", name, " ", decl)
-	return e
-}
-
-func (e *Block) ForEach(loopName, varName string, block *Block) *Block {
-	if loopName == "" {
-		loopName = guessItemName(varName)
-	}
-	e.AddLine("for _,", loopName, ":= range ", varName, "{")
-	e.AddLine(block)
-	e.AddLine("}")
-	e.NewLine() // no cuddling
-	return e
-}
-
-func (e *Block) If(condition string, block *Block) *Block {
-	e.AddLine("if ", condition, " {")
-	e.AddLine(block)
-	e.AddLine("}")
-	e.NewLine() // no cuddling
-	return e
-}
-
-// Check is a template for
-//    if <errName> != nil {
-//	      return <p0,...,pn>, fmt.Errorf("<msg>: %w",<errName>)
-//    }
-func (e *Block) Check(errName string, msg string, returnParams ...string) *Block {
-	e.AddLine("if ", errName, "!= nil {")
-	e.Add("return ")
-	for _, param := range returnParams {
-		e.Add(param)
-		e.Add(", ")
-	}
-	e.Add(NewTypeDecl("fmt.Errorf"), `("`, msg, `: %w", `, errName, ")")
-	e.NewLine()
-	e.AddLine("}")
-	e.AddLine() //wsl
-	return e
-}
-
-func (e *Block) Add(codes ...interface{}) *Block {
-	for _, code := range codes {
-		switch t := code.(type) {
-		case fileProviderAttacher:
-			e.emitter = append(e.emitter, t)
-			t.onAttach(e)
-		case Emitter:
-			e.emitter = append(e.emitter, t)
-		default:
-			e.emitter = append(e.emitter, SPrintf{
-				Str:  "%v",
-				Args: []interface{}{t},
-			})
+// Invoke currently just writes a method invocation in c-style which is compatible with Java and Go. This may
+// change in the future by introducing a Template.
+func (b *Block) Invoke(name Name, args ...interface{}) *Block {
+	b.P(name, "(")
+	for i, arg := range args {
+		b.P(arg)
+		if i < len(args)-1 {
+			b.P(", ")
 		}
 	}
+	b.P(")")
 
-	return e
+	return b
 }
 
-func (e *Block) AddLine(codes ...interface{}) *Block {
-	e.Add(codes...)
+// Var creates a Template to use a short declaration like the following:
+//  * Java: var <identifier> = rhs
+//  * Go: <identifier> := rhs
+func (b *Block) Var(identifier string, rhs ...interface{}) *Block {
+	b.P(Macro(func(ctx MacroCtx, p func(r ...interface{})) error {
+		switch ctx.MimeType() {
+		case Java:
+			p("var ", identifier, " = ")
+			p(rhs...)
+		case Go:
+			p(identifier, " := ")
+			p(rhs...)
+		default:
+			return languageNotImplemented(ctx.MimeType())
+		}
+		return nil
+	}))
 
-	if len(codes) > 0 {
-		e.NewLine()
-	}
-
-	return e
+	return b
 }
 
-func (e *Block) onAttach(parent FileProvider) {
-	e.parent = parent
+// New creates a Template to evaluate cross platform like the following:
+//  * Java: new <name>(a, r, g)
+//  * Go: pkg.New<name.Identifier>(a, r, g). This currently only works for public types. But we can pick the right one,
+//    by inspecting the declarations in the current package.
+func (b *Block) New(name Name, args ...interface{}) *Block {
+	b.P(Macro(func(ctx MacroCtx, p func(r ...interface{})) error {
+		switch ctx.MimeType() {
+		case Java:
+			p("new ", name)
+			p("(")
+			for i, arg := range args {
+				p(arg)
+				if i > len(args)-1 {
+					p(",")
+				}
+			}
+			p(")")
+		case Go:
+			newName := Name(name.Qualifier() + ".New" + name.Identifier())
+			p(newName)
+			p("(")
+			for i, arg := range args {
+				p(arg)
+				if i > len(args)-1 {
+					p(",")
+				}
+			}
+			p(")")
+		default:
+			return languageNotImplemented(ctx.MimeType())
+		}
+		return nil
+	}))
+
+	return b
 }
 
-func (e *Block) Emit(w Writer) {
-	for _, v := range e.emitter {
-		v.Emit(w)
-	}
+// Call is like Invoke but uses the identifier as the target and the method name as the Name.
+func (b *Block) Call(identifier, method string, args ...interface{}) *Block {
+	b.P(identifier, ".")
+	b.Invoke(Name(method), args...)
+	return b
 }
 
-// guessItemName does the following:
-//  receiver.Fields => field
-//  Fields => field
-//  Field => fieldElement
-func guessItemName(name string) string {
-	i := strings.Index(name, ".")
-	actualName := name
-	if i > -1 {
-		actualName = name[i+1:]
-	}
+// Elements returns the backing slice of all block elements. See also P.
+func (b *Block) Elements() []interface{} {
+	return b.elements
+}
 
-	actualName = strings.ToLower(actualName)
-	if strings.HasSuffix(actualName, "s") {
-		return actualName[:len(actualName)-1]
-	}
+// A MacroCtx allows access to actual rendering context.
+type MacroCtx interface {
+	// MimeType is a shortcut to the files mimetype. If not applicable, returns the empty string.
+	//  * text/x-java-source
+	//  * text/x-go-source
+	MimeType() string
 
-	return actualName + "Element"
+	// TODO we dont need that, if our macro contract just says that Elements are strings, Name and src.TypeDecl
+	// StdLib tries to resolve the given name into a standard library type defined by the actual render context
+	// without importing it.
+	StdLib(name Name) Name
+
+	// TODO we dont need that, if our macro contract just says that Elements are strings, Name and src.TypeDecl
+	// Import tries to resolve the given name from the standard library and imports it for the usage in the current
+	// file.
+	Import(name Name) Name
+
+	// Receiver returns the current receiver:
+	//  * Java: in static contexts (like a static method) this is the empty string. In other methods just "this" is
+	//    returned.
+	//  * Go: in a functions context (not a struct method) this is the empty string, otherwise the receiver name
+	//    name is returned. If no custom name has been defined, the first lowercase letter from the type
+	//    is declared and returned.
+	Receiver() string
+}
+
+// Macro is a function to be called to emit source code directly.
+type Macro func(ctx MacroCtx, p func(r ...interface{})) error
+
+func languageNotImplemented(lang string) error {
+	return fmt.Errorf("language not implemented: %s", lang)
 }

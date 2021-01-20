@@ -1,57 +1,69 @@
-// Copyright 2020 Torben Schinke
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package src
 
-type Parameter struct {
-	name   string
-	decl   *TypeDecl
-	parent FileProvider
+// A Param represents a functional input or output parameter.
+type Param struct {
+	doc         string
+	name        string
+	typeDecl    TypeDecl
+	annotations []*Annotation
 }
 
-func NewParameter(name string, decl *TypeDecl) *Parameter {
-	return &Parameter{
-		name: name,
-		decl: decl,
+// NewParam returns a new named parameter. It is valid to have unnamed parameters in go.
+func NewParam(name string, typeDecl TypeDecl) *Param {
+	return &Param{
+		name:     name,
+		typeDecl: typeDecl,
 	}
 }
 
-func (p *Parameter) Clone() *Parameter {
-	return NewParameter(p.name, p.decl.Clone())
+// SetDoc updates the parameters comment. Go does not have an explicit representation,
+// however the text is just appended to the functions comment. The best is to use
+// the ellipsis. In Java this is also merged into methods comment but with using the @param annotation.
+func (p *Param) SetDoc(doc string) *Param {
+	p.doc = doc
+	return p
 }
 
-func (p *Parameter) Name() string {
+// Doc returns the current comment.
+func (p *Param) Doc() string {
+	return p.doc
+}
+
+// SetName updates the current name. An empty name is valid for Go, but not for Java.
+func (p *Param) SetName(name string) *Param {
+	p.name = name
+	return p
+}
+
+// Name returns the parameters name.
+func (p *Param) Name() string {
 	return p.name
 }
 
-func (p *Parameter) Decl() *TypeDecl {
-	return p.decl
+// SetTypeDecl updates the type declaration of the parameter.
+func (p *Param) SetTypeDecl(t TypeDecl) *Param {
+	p.typeDecl = t
+	return p
 }
 
-func (p *Parameter) onAttach(parent FileProvider) {
-	p.parent = parent
-	p.decl.onAttach(parent)
+// TypeDecl returns the current type declaration.
+func (p *Param) TypeDecl() TypeDecl {
+	return p.typeDecl
 }
 
-func (p *Parameter) Emit(w Writer) {
-	w.Printf(p.name)
-	w.Printf(" ")
-	p.decl.Emit(w)
+// String returns a debugging representation.
+func (p *Param) String() string {
+	return p.name + " " + p.typeDecl.String()
 }
 
-func (p *Parameter) emitAsVariadic(w Writer) {
-	w.Printf(p.name)
-	w.Printf("...")
-	p.decl.Emit(w)
+// Annotations returns the backing slice of all annotations.
+func (p *Param) Annotations() []*Annotation {
+	return p.annotations
+}
+
+// AddAnnotations appends the given annotations. Note that not all render targets support parameter annotations, e.g.
+// like Go.
+func (p *Param) AddAnnotations(a ...*Annotation) *Param {
+	p.annotations = append(p.annotations, a...)
+	return p
 }
