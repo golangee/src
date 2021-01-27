@@ -1,9 +1,9 @@
 package ast2
 
-// A Pkg represents a package and contains compilation units (source code files).
+// A Pkg represents a package and contains compilation units (source code files). Its position relates the local
+// physical folder.
 type Pkg struct {
-	PkgFiles    []*File
-	PkgPackages []*Pkg
+	PkgFiles []*File
 	// Path denotes the import path.
 	//  * Go: the fully qualified Go path or module path for this module.
 	//  * Java: the fully qualified package name.
@@ -23,16 +23,26 @@ type Pkg struct {
 	Obj
 }
 
-// Children returns a defensive copy of the underlying slice. However the Node references are shared.
-func (n *Pkg) Children() []Node {
-	tmp := make([]Node, 0, len(n.PkgFiles)+len(n.PkgPackages)+1)
-	tmp = append(tmp, n.Obj.ObjComment)
-
-	for _, pkg := range n.PkgFiles {
-		tmp = append(tmp, pkg)
+// Files appends the given files.
+func (n *Pkg) Files(files ...*File) *Pkg {
+	for _, file := range files {
+		assertNotAttached(file)
+		n.PkgFiles = append(n.PkgFiles, file)
+		file.ObjParent = n
 	}
 
-	for _, pkg := range n.PkgPackages {
+	return n
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (n *Pkg) Children() []Node {
+	tmp := make([]Node, 0, len(n.PkgFiles)+1)
+
+	if n.ObjComment != nil {
+		tmp = append(tmp, n.Obj.ObjComment)
+	}
+
+	for _, pkg := range n.PkgFiles {
 		tmp = append(tmp, pkg)
 	}
 

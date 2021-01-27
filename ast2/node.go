@@ -64,7 +64,7 @@ type Obj struct {
 	ObjEnd     Pos
 	ObjParent  Node
 	ObjTags    Tags
-	ObjComment *Comment
+	ObjComment *Comment // the actual comment of the logical object
 }
 
 func (n *Obj) Pos() Pos {
@@ -79,10 +79,19 @@ func (n *Obj) Parent() Node {
 	return n.ObjParent
 }
 
+func (n *Obj) SetParent(p Node) {
+	n.ObjParent = p
+}
+
 func (n *Obj) Tags() Tags {
 	return n.ObjTags
 }
 
 func (n *Obj) Comment() *Comment {
 	return n.ObjComment
+}
+
+type SettableParent interface {
+	Node
+	SetParent(p Node)
 }
