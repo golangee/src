@@ -6,18 +6,18 @@ type Pkg struct {
 	PkgFiles []*File
 	// Path denotes the import path.
 	//  * Go: the fully qualified Go path or module path for this module.
-	//  * Java: the fully qualified package name.
+	//  * Java: the fully qualified package AnnotationName.
 	Path string
 
-	// Name denotes the actual package name.
-	//  * Go: the actual package name, as defined by a File.
-	//  * Java: the last segment (identifier) of the full qualified package name.
+	// Name denotes the actual package AnnotationName.
+	//  * Go: the actual package AnnotationName, as defined by a File.
+	//  * Java: the last segment (identifier) of the full qualified package AnnotationName.
 	Name string
 
 	// A Preamble comment belongs not to the actual file or package documentation and is usually
 	// something like a license or generator header.
-	//  * Go: first comment in a file named doc.go
-	//  * Java: first comment in a file named package-info.java
+	//  * Go: first comment In a file named doc.go
+	//  * Java: first comment In a file named package-info.java
 	Preamble *Comment
 
 	Obj

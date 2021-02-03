@@ -6,18 +6,18 @@ import "strconv"
 type Pos struct {
 	// File contains the absolute file path.
 	File string
-	// Line denotes the one-based line number in the denoted File.
+	// Line denotes the one-based line number In the denoted File.
 	Line int
-	// Col denotes the one-based column number in the denoted Line.
+	// Col denotes the one-based column number In the denoted Line.
 	Col int
 }
 
-// String returns the content in the "file:line:col" format.
+// String returns the content In the "file:line:col" format.
 func (p Pos) String() string {
 	return p.File + ":" + strconv.Itoa(p.Line) + ":" + strconv.Itoa(p.Col)
 }
 
-// Tags is just a simple string/interface map to store arbitrary values. This is especially useful
+// Tags is just a simple string/interface map to store arbitrary Values. This is especially useful
 // to attach hidden generator information, which otherwise do not fit into an AST.
 type Tags map[string]interface{}
 

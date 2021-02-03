@@ -1,12 +1,12 @@
 // Copyright 2020 Torben Schinke
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
+// you may not use this file except In compliance with the License.
 // You may obtain a copy of the License at
 //
 //     https://www.apache.org/licenses/LICENSE-2.0
 //
-// Unless required by applicable law or agreed to in writing, software
+// Unless required by applicable law or agreed to In writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
@@ -22,7 +22,7 @@ import (
 // A TypeDecl is the most complex part to represent. Examples of valid type declarations are:
 //  * Go/Java: int => SimpleTypeDecl
 //  * Go: *int => TypeDeclPtr
-//  * Go: map[string]int or Java: java.util.Map<String,Integer> => GenericTypeDecl with name "map"
+//  * Go: map[string]int or Java: java.util.Map<String,Integer> => GenericTypeDecl with AnnotationName "map"
 //  * Go: []int or Java: int[] => SliceTypeDecl
 //  * Go: [5]int => ArrayTypeDecl
 //  * Go draft: List[T int] or Java: List<Integer> => GenericTypeDecl
@@ -66,6 +66,11 @@ func (t *TypeDeclPtr) String() string {
 	return "*" + t.Decl.String()
 }
 
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *TypeDeclPtr) Children() []Node {
+	return []Node{t.Decl}
+}
+
 func (t *TypeDeclPtr) sealedTypeDecl() {
 	panic("sealed type")
 }
@@ -88,7 +93,7 @@ func (t *SimpleTypeDecl) Name() Name {
 	return t.SimpleName
 }
 
-// SetName updates the qualified name.
+// SetName updates the qualified AnnotationName.
 func (t *SimpleTypeDecl) SetName(name Name) {
 	t.SimpleName = name
 }
@@ -144,6 +149,17 @@ func (t *GenericTypeDecl) Params() []TypeDecl {
 	return t.TypeParams
 }
 
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *GenericTypeDecl) Children() []Node {
+	tmp := make([]Node, 0, 1+len(t.TypeParams))
+	tmp = append(tmp, t.TypeDecl)
+	for _, param := range t.TypeParams {
+		tmp = append(tmp, param)
+	}
+
+	return tmp
+}
+
 // String returns a debugging representation.
 func (t *GenericTypeDecl) String() string {
 	tmp := t.TypeDecl.String()
@@ -189,6 +205,11 @@ func NewNamedTypeDecl(name string, decl TypeDecl) *NamedTypeDecl {
 	return t
 }
 
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *NamedTypeDecl) Children() []Node {
+	return []Node{t.TypeDecl}
+}
+
 // Bounds returns either UnboundedType or UpperBoundedType or LowerBoundedType.
 func (t *NamedTypeDecl) Bound() TypeBound {
 	return t.TypeBound
@@ -209,7 +230,7 @@ func (t *NamedTypeDecl) SetType(typeDecl TypeDecl) {
 	t.TypeDecl = typeDecl
 }
 
-// Name returns the introduced parameter name. Take care of ? for special names, like wildcards.
+// Name returns the introduced parameter AnnotationName. Take care of ? for special names, like wildcards.
 func (t *NamedTypeDecl) Name() string {
 	return t.TypeName
 }
@@ -281,46 +302,60 @@ func (t *SliceTypeDecl) String() string {
 	return "[]" + t.TypeDecl.String()
 }
 
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *SliceTypeDecl) Children() []Node {
+	return []Node{t.TypeDecl}
+}
+
 func (t *SliceTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-//====== //TODO continue
-
-// ArrayTypeDecl declares a fixed length array type of an arbitrary type. This is not expressible in Java and
+// ArrayTypeDecl declares a fixed length array type of an arbitrary type. This is not expressible In Java and
 // degenerates to a normal array.
 type ArrayTypeDecl struct {
-	len      int
-	typeDecl TypeDecl
+	ArrayLen      int
+	ArrayTypeDecl TypeDecl
+	Obj
 }
 
 // NewArrayTypeDecl returns a new array type.
 func NewArrayTypeDecl(len int, typeDecl TypeDecl) *ArrayTypeDecl {
-	return &ArrayTypeDecl{
-		len:      len,
-		typeDecl: typeDecl,
+	t := &ArrayTypeDecl{
+		ArrayLen:      len,
+		ArrayTypeDecl: typeDecl,
 	}
+
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(t)
+
+	return t
 }
 
 // TypeDecl returns the declared type.
 func (t *ArrayTypeDecl) TypeDecl() TypeDecl {
-	return t.typeDecl
+	return t.ArrayTypeDecl
 }
 
 // SetTypeDecl updates the named type declaration.
 func (t *ArrayTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ArrayTypeDecl {
-	t.typeDecl = typeDecl
+	t.ArrayTypeDecl = typeDecl
 	return t
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *ArrayTypeDecl) Children() []Node {
+	return []Node{t.ArrayTypeDecl}
 }
 
 // Len returns the declared array length.
 func (t *ArrayTypeDecl) Len() int {
-	return t.len
+	return t.ArrayLen
 }
 
 // String returns a debugging representation.
 func (t *ArrayTypeDecl) String() string {
-	return "[" + strconv.Itoa(t.len) + "]" + t.typeDecl.String()
+	return "[" + strconv.Itoa(t.ArrayLen) + "]" + t.ArrayTypeDecl.String()
 }
 
 func (t *ArrayTypeDecl) sealedTypeDecl() {
@@ -332,7 +367,14 @@ func (t *ArrayTypeDecl) sealedTypeDecl() {
 // NewMapDecl is just a normal generic declaration but represents either the Go builtin type "map" or
 // for Java the java.util.Map type.
 func NewMapDecl(key, val TypeDecl) *GenericTypeDecl {
-	return NewGenericDecl(NewSimpleTypeDecl(stdlib.Map), key, val)
+	t := NewGenericDecl(NewSimpleTypeDecl(stdlib.Map), key, val)
+	assertNotAttached(key)
+	assertSettableParent(key).SetParent(t)
+
+	assertNotAttached(val)
+	assertSettableParent(val).SetParent(t)
+
+	return t
 }
 
 //======
@@ -361,32 +403,43 @@ const (
 // language itself. Java does not have such a type, but java.util.concurrent.BlockingQueue may be the
 // equivalent.
 type ChanTypeDecl struct {
-	typeDecl TypeDecl
-	dir      ChanDir
+	ChanTypeDecl TypeDecl
+	ChanDir      ChanDir
+	Obj
 }
 
 // NewChanTypeDecl creates a bidirectional channel type.
 func NewChanTypeDecl(typeDecl TypeDecl) *ChanTypeDecl {
-	return &ChanTypeDecl{
-		typeDecl: typeDecl,
-		dir:      ChanSendRecv,
+	t := &ChanTypeDecl{
+		ChanTypeDecl: typeDecl,
+		ChanDir:      ChanSendRecv,
 	}
+
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(t)
+
+	return t
 }
 
 // TypeDecl returns the declared type.
 func (t *ChanTypeDecl) TypeDecl() TypeDecl {
-	return t.typeDecl
+	return t.ChanTypeDecl
 }
 
 // SetTypeDecl updates the named type declaration.
 func (t *ChanTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ChanTypeDecl {
-	t.typeDecl = typeDecl
+	t.ChanTypeDecl = typeDecl
 	return t
 }
 
 // String returns a debugging representation.
 func (t *ChanTypeDecl) String() string {
-	return string(t.dir) + " " + t.typeDecl.String()
+	return string(t.ChanDir) + " " + t.ChanTypeDecl.String()
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *ChanTypeDecl) Children() []Node {
+	return []Node{t.ChanTypeDecl}
 }
 
 func (t *ChanTypeDecl) sealedTypeDecl() {
@@ -395,11 +448,12 @@ func (t *ChanTypeDecl) sealedTypeDecl() {
 
 //======
 
-// A FuncTypeDecl is only valid for Go, because in Java this is not directly expressible, and requires a
+// A FuncTypeDecl is only valid for Go, because In Java this is not directly expressible, and requires a
 // "functional interface" which would be just a SimpleTypeDecl.
 type FuncTypeDecl struct {
-	in  []*Param
-	out []*Param
+	In  []*Param
+	Out []*Param
+	Obj
 }
 
 // NewFuncTypeDecl returns a parameterless function signature.
@@ -409,53 +463,77 @@ func NewFuncTypeDecl() *FuncTypeDecl {
 
 // AddInputParams appends the given parameters as the functions input parameters.
 func (f *FuncTypeDecl) AddInputParams(p ...*Param) *FuncTypeDecl {
-	f.in = append(f.in, p...)
+	for _, param := range p {
+		assertNotAttached(param)
+		assertSettableParent(param).SetParent(param)
+		f.In = append(f.In, param)
+	}
+
 	return f
 }
 
 // InputParams returns the current functions input parameters.
 func (f *FuncTypeDecl) InputParams() []*Param {
-	return f.in
+	return f.In
 }
 
 // AddOutputParams appends the given parameters as the functions output parameters.
 func (f *FuncTypeDecl) AddOutputParams(p ...*Param) *FuncTypeDecl {
-	f.out = append(f.out, p...)
+	for _, param := range p {
+		assertNotAttached(param)
+		assertSettableParent(param).SetParent(param)
+		f.Out = append(f.Out, param)
+	}
+
 	return f
 }
 
 // OutputParams returns the current functions output parameters.
 func (f *FuncTypeDecl) OutputParams() []*Param {
-	return f.out
+	return f.Out
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (f *FuncTypeDecl) Children() []Node {
+	tmp := make([]Node, 0, len(f.In)+len(f.Out))
+	for _, param := range f.In {
+		tmp = append(tmp, param)
+	}
+
+	for _, param := range f.Out {
+		tmp = append(tmp, param)
+	}
+
+	return tmp
 }
 
 // String returns a debugging representation.
 func (f *FuncTypeDecl) String() string {
 	tmp := "func("
-	for i, param := range f.in {
+	for i, param := range f.In {
 		tmp += param.String()
-		if i < len(f.in)-1 {
+		if i < len(f.In)-1 {
 			tmp += ","
 		}
 	}
 	tmp += ")"
 
-	if len(f.out) > 0 {
+	if len(f.Out) > 0 {
 		tmp += " "
 	}
 
-	if len(f.out) > 1 {
+	if len(f.Out) > 1 {
 		tmp += "("
 	}
 
-	for i, param := range f.out {
+	for i, param := range f.Out {
 		tmp += param.String()
-		if i < len(f.in)-1 {
+		if i < len(f.In)-1 {
 			tmp += ","
 		}
 	}
 
-	if len(f.out) > 1 {
+	if len(f.Out) > 1 {
 		tmp += ")"
 	}
 

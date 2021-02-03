@@ -2,6 +2,8 @@ package ast2
 
 import "strconv"
 
+// Visibility is an enum which represents java like visibility flag combinations. Note that languages like
+// Go do not support all variants, e.g. Go has just Public and PackagePrivate.
 type Visibility int
 
 func (v Visibility) String() string {
@@ -23,7 +25,7 @@ const (
 	// Public declarations are visible for everyone.
 	Public Visibility = iota
 
-	// PackagePrivate declarations are visible only from within the package (in the sense of a module). This
+	// PackagePrivate declarations are visible only from within the package (In the sense of a module). This
 	// corresponds to a Go lowercase identifier and to the Java Default rule.
 	PackagePrivate
 

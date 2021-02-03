@@ -42,7 +42,7 @@ const (
 	LangVersionSwift LangVersion = "5.1"
 )
 
-// Framework specifies an arbitrary framework string. This is mostly unique in conjunction with a language.
+// Framework specifies an arbitrary framework string. This is mostly unique In conjunction with a language.
 type Framework string
 
 const (

@@ -30,70 +30,43 @@ func (n *Macro) Children() []Node {
 	return n.Func(n)
 }
 
-type targetFunc struct {
-	target Target
-	f      func(m *Macro) []Node
-}
-
-func (tf targetFunc) matches(t Target) bool {
-	if tf.target.Equals(t) {
-		return true
-	}
-
-	// if only lang is set, just match that, ignore everything else
-	if t.MinLangVersion == "" && t.MaxLangVersion == "" && t.Framework == "" && tf.target.Lang == t.Lang && t.Arch == "" && t.Os == "" {
-		return true
-	}
-
-	return false
-}
-
-// A MacroBuilder helps to create a target dependent macro.
-type MacroBuilder struct {
-	macros []targetFunc
-	m      *Macro
-}
-
-// NewMacroBuilder create a new builder to pick between multiple targets.
-func NewMacroBuilder() *MacroBuilder {
-	b := &MacroBuilder{
-		m: NewMacro(),
-	}
-
-	b.m.Func = func(m *Macro) []Node {
-		target := m.Target()
-		for _, macro := range b.macros {
-			if macro.matches(target) {
-				return macro.f(m)
+// SetMatchers is a builder function which replaces the Func with a loop implementation which invokes each given
+// matcher in the given order and therefore just returns the first static nodes which apply.
+func (n *Macro) SetMatchers(matchers ...func(m *Macro) (bool, []Node)) *Macro {
+	n.Func = func(m *Macro) []Node {
+		for _, f := range matchers {
+			matches, nodes := f(n)
+			if matches {
+				return nodes
 			}
 		}
 
-		return []Node{NewComment("no macro match found")}
+		return nil
 	}
 
-	return b
+	return n
 }
 
-// Add appends a target and the applied func. Empty fields will be ignored (like a * glob).
-func (b *MacroBuilder) Add(t Target, f func(m *Macro) []Node) *MacroBuilder {
-	b.macros = append(b.macros, targetFunc{
-		target: t,
-		f:      f,
-	})
+// MatchTargetLanguage returns a closure which can be used in conjunction with Macro.SetMatchers and
+// evaluates to true as soon as the target language matches the given language. The given static nodes
+// are just returned. Note that each node is attached to this macro on successful evaluation.
+func MatchTargetLanguage(lang Lang, nodes ...Node) func(m *Macro) (bool, []Node) {
+	return func(m *Macro) (bool, []Node) {
+		target := m.Target()
+		if target.Lang == lang {
+			for _, node := range nodes {
+				if node.Parent() != nil && node.Parent() != m {
+					assertNotAttached(node)
+				}
 
-	return b
-}
+				if node.Parent() == nil {
+					assertSettableParent(m)
+				}
 
-// AddLang appends a simplified catch-all language mapper which ever returns the given fixed set of nodes.
-func (b *MacroBuilder) AddLang(lang Lang, nodes ...Node) *MacroBuilder {
-	return b.Add(Target{
-		Lang: lang,
-	}, func(m *Macro) []Node {
-		return nodes
-	})
-}
+			}
+			return true, nodes
+		}
 
-// Macro returns the internal macro instance.
-func (b *MacroBuilder) Macro() *Macro {
-	return b.m
+		return false, nil
+	}
 }

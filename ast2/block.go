@@ -8,6 +8,7 @@ type Block struct {
 	Obj
 }
 
+// Add appends and attaches the given nodes to this block.
 func (n *Block) Add(nodes ...Node) *Block {
 	for _, node := range nodes {
 		n.Nodes = append(n.Nodes, node)
