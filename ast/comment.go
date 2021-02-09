@@ -1,4 +1,4 @@
-package ast2
+package ast
 
 // A positioned Comment text. The Text may have been normalized and prefixes and others have been removed, so
 // an exact positioning of the actual text characters is not possible. A comment may consists of multiple

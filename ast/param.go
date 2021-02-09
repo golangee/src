@@ -1,4 +1,4 @@
-package ast2
+package ast
 
 // A Param represents a functional input or output parameter.
 type Param struct {

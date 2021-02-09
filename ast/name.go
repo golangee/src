@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ast2
+package ast
 
 import "strings"
 
@@ -20,15 +20,15 @@ import "strings"
 // Valid examples:
 //  * Go: github.com/myproject/mymod/mypath.MyType
 //  * Go/Java: int
-//  * Java: my.package.AnnotationName.MyType
+//  * Java: my.package.name.MyType
 //
-// Note, that for the usage In Go, the qualifier does not carry any information about the actual package AnnotationName, so
+// Note, that for the usage In Go, the qualifier does not carry any information about the actual package name, so
 // it can only be used In an explicitly named import context, which is sufficient per definition.
 // Generic types cannot be expressed and must use a TypeDecl.
 type Name string
 
-// Identifier returns the identify part of the AnnotationName, so everything from right side from the last dot.
-// If no dot is found, e.g. for universe types, the entire AnnotationName is returned.
+// Identifier returns the identify part of the name, so everything from right side from the last dot.
+// If no dot is found, e.g. for universe types, the entire name is returned.
 func (q Name) Identifier() string {
 	i := strings.LastIndex(string(q), ".")
 	if i == -1 {
@@ -38,7 +38,7 @@ func (q Name) Identifier() string {
 	return string(q[i+1:])
 }
 
-// Qualifier returns the qualifying part of the AnnotationName, so everything at the left side from the last dot. If not dot
+// Qualifier returns the qualifying part of the name, so everything at the left side from the last dot. If not dot
 // is found, e.g. for universe types, the empty string is returned.
 func (q Name) Qualifier() string {
 	i := strings.LastIndex(string(q), ".")

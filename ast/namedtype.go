@@ -1,4 +1,4 @@
-package ast2
+package ast
 
 // NamedType declares a new named type which is either derived from another existing type
 // or is a struct or interface.

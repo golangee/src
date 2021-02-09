@@ -1,13 +1,125 @@
 package ast
 
-// Node represents a declared element in the abstract syntax tree.
+import "strconv"
+
+// A Pos describes a resolved position within a file.
+type Pos struct {
+	// File contains the absolute file path.
+	File string
+	// Line denotes the one-based line number In the denoted File.
+	Line int
+	// Col denotes the one-based column number In the denoted Line.
+	Col int
+}
+
+// String returns the content In the "file:line:col" format.
+func (p Pos) String() string {
+	return p.File + ":" + strconv.Itoa(p.Line) + ":" + strconv.Itoa(p.Col)
+}
+
+// Tags is just a simple string/interface map to store arbitrary Values. This is especially useful
+// to attach hidden generator information, which otherwise do not fit into an AST.
+type Tags map[string]interface{}
+
+// Get returns the according value or nil. This is nil safe.
+func (t Tags) Get(key string) interface{} {
+	if t == nil {
+		return nil
+	}
+
+	return t[key]
+}
+
+// A Node represents the common contract
 type Node interface {
-	// Parent returns the parent node, or nil if its the root node.
+	// Pos returns the actual starting position of this Node.
+	Pos() Pos
+
+	// End is the position of the first char after the node.
+	End() Pos
+
+	// Parent returns the parent Node or nil if undefined. This recursive implementation may be considered as
+	// unnecessary and even as an anti pattern within an AST but the core feature is to perform semantic validations
+	// which requires a lot of down/up iterations through the (entire) AST. Keeping the relational relation
+	// at the node level keeps things simple and we don't need to pass (path) contexts everywhere.
 	Parent() Node
 
-	// Value returns nil or the associated payload value.
+	// Deprecated: Tags returns access to arbitrary tags. May be nil, so always use the Get accessor.
+	Tags() Tags //TODO do we still need that?
+
+	// Value is like a context Value getter.
 	Value(key interface{}) interface{}
 
-	// SetValue updates the payload value for the given key.
-	SetValue(key, value interface{})
+	// PutValue overwrites the given key with the given value. Consider using package private types, to ensure
+	// that no collisions can occur.
+	PutValue(key, value interface{})
+
+	// Comment returns an optional comment node.
+	Comment() *Comment
+}
+
+// A Parent is a Node and may contain other nodes as children. This is used to simplify algorithms based on Walk.
+type Parent interface {
+	Node
+	// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+	Children() []Node
+}
+
+// Obj is actually a helper to implement a Node by embedding the Obj
+type Obj struct {
+	ObjPos     Pos
+	ObjEnd     Pos
+	ObjParent  Node
+	ObjTags    Tags
+	ObjComment *Comment // the actual comment of the logical object
+	Values     map[interface{}]interface{}
+}
+
+func (n *Obj) Pos() Pos {
+	return n.ObjPos
+}
+
+func (n *Obj) End() Pos {
+	return n.ObjEnd
+}
+
+func (n *Obj) Parent() Node {
+	return n.ObjParent
+}
+
+func (n *Obj) SetParent(p Node) {
+	n.ObjParent = p
+}
+
+func (n *Obj) Tags() Tags {
+	return n.ObjTags
+}
+
+func (n *Obj) Comment() *Comment {
+	return n.ObjComment
+}
+
+// Value is like a context Value getter.
+func (n *Obj) Value(key interface{}) interface{} {
+	if n.Values == nil {
+		return nil
+	}
+
+	return n.Values[key]
+}
+
+// PutValue overwrites the given key with the given value. Consider using package private types, to ensure
+// that no collisions can occur.
+func (n *Obj) PutValue(key, value interface{}) {
+	if n.Values == nil {
+		n.Values = map[interface{}]interface{}{}
+	}
+
+	n.Values[key] = value
+
+}
+
+type SettableParent interface {
+	Node
+	SetParent(p Node)
 }

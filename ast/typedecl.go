@@ -1,362 +1,545 @@
+// Copyright 2020 Torben Schinke
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except In compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to In writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package ast
 
 import (
-	"github.com/golangee/src"
-	"reflect"
+	"github.com/golangee/src/stdlib"
+	"strconv"
 )
 
-// A TypeDeclNode represents a type declaration, not definition, which you find in TypeNode. There is a wrapper
-// for each of the 7 src.TypeDecl variants.
-type TypeDeclNode interface {
+// A TypeDecl is the most complex part to represent. Examples of valid type declarations are:
+//  * Go/Java: int => SimpleTypeDecl
+//  * Go: *int => TypeDeclPtr
+//  * Go: map[string]int or Java: java.util.Map<String,Integer> => GenericTypeDecl with AnnotationName "map"
+//  * Go: []int or Java: int[] => SliceTypeDecl
+//  * Go: [5]int => ArrayTypeDecl
+//  * Go draft: List[T int] or Java: List<Integer> => GenericTypeDecl
+//  * Go: func(a, b int) (string, error) => FuncTypeDecl
+//  * Java: X <T extends List,V extends List<? super Integer>> => GenericTypeDecl + NamedTypeDecl
+//  * Go: chan<- string or <-chan string or chan string => ChanTypeDecl
+type TypeDecl interface {
+	// String returns a human readable declaration for debugging purposes.
+	String() string
+
+	// sealedTypeDecl ensures that nobody can implement his own TypeDecl which is generally not acceptable for
+	// our code generators.
+	sealedTypeDecl()
+
 	Node
-	sealedTypeDeclNode()
 }
 
-// NewTypeDeclNode wraps the given instance and creates a sub tree with parent/children relations to
-// create a foundation for context-aware renderers.
-func NewTypeDeclNode(parent Node, decl src.TypeDecl) TypeDeclNode {
-	switch t := decl.(type) {
-	case *src.SimpleTypeDecl:
-		return NewSimpleTypeDeclNode(parent, t)
-	case *src.TypeDeclPtr:
-		return NewTypeDeclPtrNode(parent, t)
-	case *src.SliceTypeDecl:
-		return NewSliceTypeDeclNode(parent, t)
-	case *src.ChanTypeDecl:
-		return NewChanTypeDeclNode(parent, t)
-	case *src.ArrayTypeDecl:
-		return NewArrayTypeDeclNode(parent, t)
-	case *src.GenericTypeDecl:
-		return NewGenericTypeDeclNode(parent, t)
-	case *src.FuncTypeDecl:
-		return NewFuncTypeDeclNode(parent, t)
-	default:
-		panic("not yet implemented: " + reflect.TypeOf(t).String())
-	}
+// TypeDeclPtr is a TypeDecl declares a pointer type.
+type TypeDeclPtr struct {
+	Decl TypeDecl
+	Obj
 }
 
-// ========
+// NewTypeDeclPtr returns a new wrapper around another type declaration. This is only possible on a language
+// level for Go but for Java java.util.concurrent.atomic.AtomicReference is used.
+func NewTypeDeclPtr(decl TypeDecl) *TypeDeclPtr {
+	t := &TypeDeclPtr{Decl: decl}
+	assertNotAttached(decl)
+	assertSettableParent(decl).SetParent(t)
 
-// SimpleTypeDeclNode wraps the src.SimpleTypeDecl.
-type SimpleTypeDeclNode struct {
-	parent            Node
-	srcSimpleTypeDecl *src.SimpleTypeDecl
-	*payload
+	return t
 }
 
-// NewSimpleTypeDeclNode wraps the src.SimpleTypeDecl.
-func NewSimpleTypeDeclNode(parent Node, typeDecl *src.SimpleTypeDecl) *SimpleTypeDeclNode {
-	return &SimpleTypeDeclNode{
-		parent:            parent,
-		srcSimpleTypeDecl: typeDecl,
-		payload:           newPayload(),
-	}
+// TypeDecl returns the referenced type.
+func (t *TypeDeclPtr) TypeDecl() TypeDecl {
+	return t.Decl
 }
 
-// SrcSimpleTypeDecl returns the original declaration.
-func (n *SimpleTypeDeclNode) SrcSimpleTypeDecl() *src.SimpleTypeDecl {
-	return n.srcSimpleTypeDecl
+// String returns a debugging representation.
+func (t *TypeDeclPtr) String() string {
+	return "*" + t.Decl.String()
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *SimpleTypeDeclNode) Parent() Node {
-	return n.parent
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *TypeDeclPtr) Children() []Node {
+	return []Node{t.Decl}
 }
 
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *SimpleTypeDeclNode) sealedTypeDeclNode() {
+func (t *TypeDeclPtr) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-// ========
+//======
 
-// TypeDeclPtrNode wraps the src.TypeDeclPtr.
-type TypeDeclPtrNode struct {
-	parent         Node
-	srcTypeDeclPtr *src.TypeDeclPtr
-	typeDecl       TypeDeclNode
-	*payload
+// A SimpleTypeDecl just refers to a named type.
+type SimpleTypeDecl struct {
+	SimpleName Name
+	Obj
 }
 
-// NewSimpleTypeDeclNode wraps the src.SimpleTypeDecl.
-func NewTypeDeclPtrNode(parent Node, typeDecl *src.TypeDeclPtr) *TypeDeclPtrNode {
-	n := &TypeDeclPtrNode{
-		parent:         parent,
-		srcTypeDeclPtr: typeDecl,
-		payload:        newPayload(),
-	}
-
-	n.typeDecl = NewTypeDeclNode(n, typeDecl.TypeDecl())
-	return n
+// NewSimpleTypeDecl create a simple type declaration.
+func NewSimpleTypeDecl(name Name) *SimpleTypeDecl {
+	return &SimpleTypeDecl{SimpleName: name}
 }
 
-// TypeDecl returns the wrapped declaration.
-func (n *TypeDeclPtrNode) TypeDecl() TypeDeclNode {
-	return n.typeDecl
+// Name is the qualifier and identifier of the type.
+func (t *SimpleTypeDecl) Name() Name {
+	return t.SimpleName
 }
 
-// SrcTypeDeclPtr returns the original declaration.
-func (n *TypeDeclPtrNode) SrcTypeDeclPtr() *src.TypeDeclPtr {
-	return n.srcTypeDeclPtr
+// SetName updates the qualified AnnotationName.
+func (t *SimpleTypeDecl) SetName(name Name) {
+	t.SimpleName = name
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *TypeDeclPtrNode) Parent() Node {
-	return n.parent
+// String returns a debugging representation.
+func (t *SimpleTypeDecl) String() string {
+	return string(t.SimpleName)
 }
 
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *TypeDeclPtrNode) sealedTypeDeclNode() {
+func (t *SimpleTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-// ========
+//======
 
-// SliceTypeDeclNode wraps the src.SliceTypeDecl.
-type SliceTypeDeclNode struct {
-	parent           Node
-	srcSliceTypeDecl *src.SliceTypeDecl
-	typeDecl         TypeDeclNode
-	*payload
+// A GenericTypeDecl refers to a named type and contains (optional) named type parameters, commonly known as generics.
+type GenericTypeDecl struct {
+	TypeDecl   TypeDecl
+	TypeParams []TypeDecl
+	Obj
 }
 
-// NewSimpleTypeDeclNode wraps the src.SimpleTypeDecl.
-func NewSliceTypeDeclNode(parent Node, typeDecl *src.SliceTypeDecl) *SliceTypeDeclNode {
-	n := &SliceTypeDeclNode{
-		parent:           parent,
-		srcSliceTypeDecl: typeDecl,
-		payload:          newPayload(),
+// NewGenericDecl creates and returns a new generic declaration.
+func NewGenericDecl(typeDecl TypeDecl, params ...TypeDecl) *GenericTypeDecl {
+	t := &GenericTypeDecl{
+		TypeDecl:   typeDecl,
+		TypeParams: params,
 	}
 
-	n.typeDecl = NewTypeDeclNode(n, typeDecl.TypeDecl())
-	return n
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(t)
+
+	for _, param := range params {
+		assertNotAttached(param)
+		assertSettableParent(param).SetParent(t)
+	}
+
+	return t
 }
 
-// TypeDecl returns the wrapped declaration.
-func (n *SliceTypeDeclNode) TypeDecl() TypeDeclNode {
-	return n.typeDecl
+// Type returns the actual Type definition.
+func (t *GenericTypeDecl) Type() TypeDecl {
+	return t.TypeDecl
 }
 
-// SrcSliceTypeDecl returns the original declaration.
-func (n *SliceTypeDeclNode) SrcSliceTypeDecl() *src.SliceTypeDecl {
-	return n.srcSliceTypeDecl
+// SetType updates the type declaration.
+func (t *GenericTypeDecl) SetType(typeDecl TypeDecl) {
+	t.TypeDecl = typeDecl
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *SliceTypeDeclNode) Parent() Node {
-	return n.parent
+// Params returns all declared type parameters.
+func (t *GenericTypeDecl) Params() []TypeDecl {
+	return t.TypeParams
 }
 
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *SliceTypeDeclNode) sealedTypeDeclNode() {
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *GenericTypeDecl) Children() []Node {
+	tmp := make([]Node, 0, 1+len(t.TypeParams))
+	tmp = append(tmp, t.TypeDecl)
+	for _, param := range t.TypeParams {
+		tmp = append(tmp, param)
+	}
+
+	return tmp
+}
+
+// String returns a debugging representation.
+func (t *GenericTypeDecl) String() string {
+	tmp := t.TypeDecl.String()
+	tmp += "<"
+	for i, param := range t.TypeParams {
+		tmp += param.String()
+		if i < len(t.TypeParams)-1 {
+			tmp += ","
+		}
+	}
+	tmp += ">"
+
+	return tmp
+}
+
+func (t *GenericTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-// ========
+//======
 
-// ArrayTypeDeclNode wraps the src.ArrayTypeDecl.
-type ArrayTypeDeclNode struct {
-	parent           Node
-	srcArrayTypeDecl *src.ArrayTypeDecl
-	typeDecl         TypeDeclNode
-	*payload
+// A NamedTypeDecl tupels a normal string identifier, usually something abstract like T and a concrete type. Note
+// that ? may have a special meaning, e.g. for Java, where it declares an anonymous wildcard. It may also specify a
+// bound.
+type NamedTypeDecl struct {
+	TypeName  string
+	TypeBound TypeBound
+	TypeDecl  TypeDecl
+	Obj
 }
 
-// NewArrayTypeDeclNode wraps the src.SimpleTypeDecl.
-func NewArrayTypeDeclNode(parent Node, typeDecl *src.ArrayTypeDecl) *ArrayTypeDeclNode {
-	n := &ArrayTypeDeclNode{
-		parent:           parent,
-		srcArrayTypeDecl: typeDecl,
-		payload:          newPayload(),
+// NewNamedTypeDecl returns
+func NewNamedTypeDecl(name string, decl TypeDecl) *NamedTypeDecl {
+	t := &NamedTypeDecl{
+		TypeName:  name,
+		TypeDecl:  decl,
+		TypeBound: UnboundedType,
 	}
 
-	n.typeDecl = NewTypeDeclNode(n, typeDecl.TypeDecl())
-	return n
+	assertNotAttached(decl)
+	assertSettableParent(decl).SetParent(t)
+
+	return t
 }
 
-// TypeDecl returns the wrapped declaration.
-func (n *ArrayTypeDeclNode) TypeDecl() TypeDeclNode {
-	return n.typeDecl
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *NamedTypeDecl) Children() []Node {
+	return []Node{t.TypeDecl}
 }
 
-// SrcArrayTypeDecl returns the original declaration.
-func (n *ArrayTypeDeclNode) SrcArrayTypeDecl() *src.ArrayTypeDecl {
-	return n.srcArrayTypeDecl
+// Bounds returns either UnboundedType or UpperBoundedType or LowerBoundedType.
+func (t *NamedTypeDecl) Bound() TypeBound {
+	return t.TypeBound
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *ArrayTypeDeclNode) Parent() Node {
-	return n.parent
+// SetBound updates the bound.
+func (t *NamedTypeDecl) SetBound(bound TypeBound) {
+	t.TypeBound = bound
 }
 
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *ArrayTypeDeclNode) sealedTypeDeclNode() {
+// Type returns the actual Type definition.
+func (t *NamedTypeDecl) Type() TypeDecl {
+	return t.TypeDecl
+}
+
+// SetType updates the type declaration.
+func (t *NamedTypeDecl) SetType(typeDecl TypeDecl) {
+	t.TypeDecl = typeDecl
+}
+
+// Name returns the introduced parameter AnnotationName. Take care of ? for special names, like wildcards.
+func (t *NamedTypeDecl) Name() string {
+	return t.TypeName
+}
+
+// SetName updates the named type declaration.
+func (t *NamedTypeDecl) SetName(name string) {
+	t.TypeName = name
+}
+
+// String returns a debugging representation.
+func (t *NamedTypeDecl) String() string {
+	if t.TypeBound == UnboundedType {
+		return t.TypeName + " " + t.TypeDecl.String()
+	}
+
+	return t.TypeName + " " + string(t.TypeBound) + " " + t.TypeDecl.String()
+}
+
+func (t *NamedTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-// ========
+// A TypeBound is currently only used by the Java renderer and is used to declare upper or lower type bounds.
+type TypeBound string
 
-// ChanTypeDeclNode wraps the src.ChanTypeDecl.
-type ChanTypeDeclNode struct {
-	parent          Node
-	srcChanTypeDecl *src.ChanTypeDecl
-	typeDecl        TypeDeclNode
-	*payload
+const (
+	// UnboundedType declares no special bound, which is the default. Remember the PECS rule (producer extends,
+	// consumer super).
+	UnboundedType TypeBound = ""
+	// UpperBoundedType declares to allow the named type or its sub-types. E.g. List<? extends Number> allows Number
+	// and sub-types likes Integer.
+	UpperBoundedType TypeBound = "extends"
+	// LowerBoundedType declares to allow the named type or any of its super-types. E.g. List<? super Integer> allows
+	// Integer or any of its super-types likes Number.
+	LowerBoundedType TypeBound = "super"
+)
+
+//======
+
+// A SliceTypeDecl declares a slice of an arbitrary type. This is also used for Java arrays, because Java cannot
+// express a fixed length array type.
+type SliceTypeDecl struct {
+	TypeDecl TypeDecl
+	Obj
 }
 
-// NewChanTypeDeclNode wraps the src.ChanTypeDecl.
-func NewChanTypeDeclNode(parent Node, typeDecl *src.ChanTypeDecl) *ChanTypeDeclNode {
-	n := &ChanTypeDeclNode{
-		parent:          parent,
-		srcChanTypeDecl: typeDecl,
-		payload:         newPayload(),
-	}
+// NewSliceTypeDecl returns a new slice type declaration.
+func NewSliceTypeDecl(typeDecl TypeDecl) *SliceTypeDecl {
+	t := &SliceTypeDecl{TypeDecl: typeDecl}
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(t)
 
-	n.typeDecl = NewTypeDeclNode(n, typeDecl.TypeDecl())
-	return n
+	return t
 }
 
-// TypeDecl returns the wrapped declaration.
-func (n *ChanTypeDeclNode) TypeDecl() TypeDeclNode {
-	return n.typeDecl
+// Type returns the declared type.
+func (t *SliceTypeDecl) Type() TypeDecl {
+	return t.TypeDecl
 }
 
-// SrcChanTypeDecl returns the original declaration.
-func (n *ChanTypeDeclNode) SrcChanTypeDecl() *src.ChanTypeDecl {
-	return n.srcChanTypeDecl
+// SetType updates the named type declaration.
+func (t *SliceTypeDecl) SetType(typeDecl TypeDecl) *SliceTypeDecl {
+	t.TypeDecl = typeDecl
+	return t
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *ChanTypeDeclNode) Parent() Node {
-	return n.parent
+// String returns a debugging representation.
+func (t *SliceTypeDecl) String() string {
+	return "[]" + t.TypeDecl.String()
 }
 
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *ChanTypeDeclNode) sealedTypeDeclNode() {
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *SliceTypeDecl) Children() []Node {
+	return []Node{t.TypeDecl}
+}
+
+func (t *SliceTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-// ========
-
-// GenericTypeDeclNode wraps the src.GenericTypeDecl.
-type GenericTypeDeclNode struct {
-	parent             Node
-	srcGenericTypeDecl *src.GenericTypeDecl
-	typeDecl           TypeDeclNode
-	params             []TypeDeclNode
-	*payload
+// ArrayTypeDecl declares a fixed length array type of an arbitrary type. This is not expressible In Java and
+// degenerates to a normal array.
+type ArrayTypeDecl struct {
+	ArrayLen      int
+	ArrayTypeDecl TypeDecl
+	Obj
 }
 
-// NewGenericTypeDeclNode wraps the src.GenericTypeDecl.
-func NewGenericTypeDeclNode(parent Node, typeDecl *src.GenericTypeDecl) *GenericTypeDeclNode {
-	n := &GenericTypeDeclNode{
-		parent:             parent,
-		srcGenericTypeDecl: typeDecl,
-		payload:            newPayload(),
+// NewArrayTypeDecl returns a new array type.
+func NewArrayTypeDecl(len int, typeDecl TypeDecl) *ArrayTypeDecl {
+	t := &ArrayTypeDecl{
+		ArrayLen:      len,
+		ArrayTypeDecl: typeDecl,
 	}
 
-	n.typeDecl = NewTypeDeclNode(n, typeDecl.TypeDecl())
-	for _, decl := range typeDecl.Params() {
-		n.params = append(n.params, NewTypeDeclNode(n, decl))
-	}
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(t)
 
-	return n
+	return t
 }
 
-// TypeDecl returns the wrapped base type declaration which is parameterized by Params.
-func (n *GenericTypeDeclNode) TypeDecl() TypeDeclNode {
-	return n.typeDecl
+// TypeDecl returns the declared type.
+func (t *ArrayTypeDecl) TypeDecl() TypeDecl {
+	return t.ArrayTypeDecl
 }
 
-// TypeDecl returns the wrapped type parameter declarations.
-func (n *GenericTypeDeclNode) Params() []TypeDeclNode {
-	return n.params
+// SetTypeDecl updates the named type declaration.
+func (t *ArrayTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ArrayTypeDecl {
+	t.ArrayTypeDecl = typeDecl
+	return t
 }
 
-// SrcArrayTypeDecl returns the original declaration.
-func (n *GenericTypeDeclNode) SrcGenericTypeDecl() *src.GenericTypeDecl {
-	return n.srcGenericTypeDecl
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *ArrayTypeDecl) Children() []Node {
+	return []Node{t.ArrayTypeDecl}
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *GenericTypeDeclNode) Parent() Node {
-	return n.parent
+// Len returns the declared array length.
+func (t *ArrayTypeDecl) Len() int {
+	return t.ArrayLen
 }
 
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *GenericTypeDeclNode) sealedTypeDeclNode() {
+// String returns a debugging representation.
+func (t *ArrayTypeDecl) String() string {
+	return "[" + strconv.Itoa(t.ArrayLen) + "]" + t.ArrayTypeDecl.String()
+}
+
+func (t *ArrayTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
-// ========
+//======
 
-// FuncTypeDeclNode wraps the src.FuncTypeDecl.
-type FuncTypeDeclNode struct {
-	parent          Node
-	srcFuncTypeDecl *src.FuncTypeDecl
-	funcDecl        *src.Func
-	funcNode        *FuncNode
-	params          []*ParameterNode
-	results         []*ParameterNode
-	*payload
+// NewMapDecl is just a normal generic declaration but represents either the Go builtin type "map" or
+// for Java the java.util.Map type.
+func NewMapDecl(key, val TypeDecl) *GenericTypeDecl {
+	t := NewGenericDecl(NewSimpleTypeDecl(stdlib.Map), key, val)
+	assertNotAttached(key)
+	assertSettableParent(key).SetParent(t)
+
+	assertNotAttached(val)
+	assertSettableParent(val).SetParent(t)
+
+	return t
 }
 
-// NewGenericTypeDeclNode wraps the src.FuncTypeDecl.
-func NewFuncTypeDeclNode(parent Node, typeDecl *src.FuncTypeDecl) *FuncTypeDeclNode {
-	n := &FuncTypeDeclNode{
-		parent:          parent,
-		srcFuncTypeDecl: typeDecl,
-		payload:         newPayload(),
+//======
+
+// NewListDecl is just a normal generic declaration but represents either the Go slice type or
+// for Java the java.util.List type.
+func NewListDecl(val TypeDecl) *GenericTypeDecl {
+	return NewGenericDecl(NewSimpleTypeDecl(stdlib.List), val)
+}
+
+//======
+
+// ChanDir indicates the channel direction.
+type ChanDir string
+
+const (
+	// ChanSendRecv indicates a bidirectional go channel.
+	ChanSendRecv ChanDir = "chan"
+	// ChanSend represents a sending-only channel declaration.
+	ChanSend ChanDir = "chan<-"
+	// ChanRecv represents a receiving-only channel declaration.
+	ChanRecv ChanDir = "<-chan"
+)
+
+// ChanTypeDecl declares a sending or receiving or a bidirectional channel. In Go, this is part of the
+// language itself. Java does not have such a type, but java.util.concurrent.BlockingQueue may be the
+// equivalent.
+type ChanTypeDecl struct {
+	ChanTypeDecl TypeDecl
+	ChanDir      ChanDir
+	Obj
+}
+
+// NewChanTypeDecl creates a bidirectional channel type.
+func NewChanTypeDecl(typeDecl TypeDecl) *ChanTypeDecl {
+	t := &ChanTypeDecl{
+		ChanTypeDecl: typeDecl,
+		ChanDir:      ChanSendRecv,
 	}
 
-	// fake funcDecl
-	n.funcDecl = src.NewFunc("")
-	n.funcDecl.AddParams(typeDecl.InputParams()...)
-	n.funcDecl.AddResults(typeDecl.OutputParams()...)
-	n.funcNode = NewFuncNode(parent, n.funcDecl)
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(t)
 
-	for _, decl := range typeDecl.InputParams() {
-		n.params = append(n.params, NewParameterNode(n, decl))
+	return t
+}
+
+// TypeDecl returns the declared type.
+func (t *ChanTypeDecl) TypeDecl() TypeDecl {
+	return t.ChanTypeDecl
+}
+
+// SetTypeDecl updates the named type declaration.
+func (t *ChanTypeDecl) SetTypeDecl(typeDecl TypeDecl) *ChanTypeDecl {
+	t.ChanTypeDecl = typeDecl
+	return t
+}
+
+// String returns a debugging representation.
+func (t *ChanTypeDecl) String() string {
+	return string(t.ChanDir) + " " + t.ChanTypeDecl.String()
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (t *ChanTypeDecl) Children() []Node {
+	return []Node{t.ChanTypeDecl}
+}
+
+func (t *ChanTypeDecl) sealedTypeDecl() {
+	panic("sealed type")
+}
+
+//======
+
+// A FuncTypeDecl is only valid for Go, because In Java this is not directly expressible, and requires a
+// "functional interface" which would be just a SimpleTypeDecl.
+type FuncTypeDecl struct {
+	In  []*Param
+	Out []*Param
+	Obj
+}
+
+// NewFuncTypeDecl returns a parameterless function signature.
+func NewFuncTypeDecl() *FuncTypeDecl {
+	return &FuncTypeDecl{}
+}
+
+// AddInputParams appends the given parameters as the functions input parameters.
+func (f *FuncTypeDecl) AddInputParams(p ...*Param) *FuncTypeDecl {
+	for _, param := range p {
+		assertNotAttached(param)
+		assertSettableParent(param).SetParent(param)
+		f.In = append(f.In, param)
 	}
 
-	for _, decl := range typeDecl.OutputParams() {
-		n.params = append(n.params, NewParameterNode(n, decl))
+	return f
+}
+
+// InputParams returns the current functions input parameters.
+func (f *FuncTypeDecl) InputParams() []*Param {
+	return f.In
+}
+
+// AddOutputParams appends the given parameters as the functions output parameters.
+func (f *FuncTypeDecl) AddOutputParams(p ...*Param) *FuncTypeDecl {
+	for _, param := range p {
+		assertNotAttached(param)
+		assertSettableParent(param).SetParent(param)
+		f.Out = append(f.Out, param)
 	}
 
-	return n
+	return f
 }
 
-// SrcFunc returns a fake prototype src.Func definition.
-func (n *FuncTypeDeclNode) SrcFunc() *src.Func {
-	return n.funcDecl
+// OutputParams returns the current functions output parameters.
+func (f *FuncTypeDecl) OutputParams() []*Param {
+	return f.Out
 }
 
-// Func returns a fake prototype FuncNode definition.
-func (n *FuncTypeDeclNode) Func() *FuncNode {
-	return n.funcNode
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (f *FuncTypeDecl) Children() []Node {
+	tmp := make([]Node, 0, len(f.In)+len(f.Out))
+	for _, param := range f.In {
+		tmp = append(tmp, param)
+	}
+
+	for _, param := range f.Out {
+		tmp = append(tmp, param)
+	}
+
+	return tmp
 }
 
-// SrcFuncTypeDecl returns the original declaration.
-func (n *FuncTypeDeclNode) SrcFuncTypeDecl() *src.FuncTypeDecl {
-	return n.srcFuncTypeDecl
+// String returns a debugging representation.
+func (f *FuncTypeDecl) String() string {
+	tmp := "func("
+	for i, param := range f.In {
+		tmp += param.String()
+		if i < len(f.In)-1 {
+			tmp += ","
+		}
+	}
+	tmp += ")"
+
+	if len(f.Out) > 0 {
+		tmp += " "
+	}
+
+	if len(f.Out) > 1 {
+		tmp += "("
+	}
+
+	for i, param := range f.Out {
+		tmp += param.String()
+		if i < len(f.In)-1 {
+			tmp += ","
+		}
+	}
+
+	if len(f.Out) > 1 {
+		tmp += ")"
+	}
+
+	return tmp
 }
 
-// InputParams returns the wrapped input parameter declarations.
-func (n *FuncTypeDeclNode) InputParams() []*ParameterNode {
-	return n.params
-}
-
-// OutputParams returns the wrapped input parameter declarations.
-func (n *FuncTypeDeclNode) OutputParams() []*ParameterNode {
-	return n.results
-}
-
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *FuncTypeDeclNode) Parent() Node {
-	return n.parent
-}
-
-// sealedTypeDeclNode enforces that no others can implement this interface.
-func (n *FuncTypeDeclNode) sealedTypeDeclNode() {
+func (f *FuncTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }

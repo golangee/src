@@ -1,74 +1,116 @@
 package ast
 
-import (
-	"github.com/golangee/src"
-)
+var _ NamedType = (*Interface)(nil)
 
-// An InterfaceNode represents a (named) interface type.
-type InterfaceNode struct {
-	parent       Node
-	srcInterface *src.Interface
-	methods      []*FuncNode
-	annotations  []*AnnotationNode
-	types        []*TypeNode
-	*payload
+// An Interface is a contract which defines a method set and allows polymorphism without inheritance. If a
+// body is declared, it depends on the actual renderer, if a default method will be emitted (e.g. for Java).
+// Go does not support default methods in interfaces.
+type Interface struct {
+	TypeName        string
+	TypeVisibility  Visibility
+	TypeMethods     []*Func
+	TypeAnnotations []*Annotation
+	Types           []NamedType // only valid for language which can declare named nested type like java
+	Obj
 }
 
-// NewInterfaceNode wraps the given instance and creates a sub tree with parent/children relations to
-// create a foundation for context-aware renderers.
-func NewInterfaceNode(parent Node, iface *src.Interface) *InterfaceNode {
-	n := &InterfaceNode{
-		parent:       parent,
-		srcInterface: iface,
-		payload:      newPayload(),
-	}
-
-	for _, f := range iface.Methods() {
-		n.methods = append(n.methods, NewFuncNode(n, f))
-	}
-
-	for _, annotation := range iface.Annotations() {
-		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
-	}
-
-	for _, namedType := range iface.Types() {
-		n.types = append(n.types, NewTypeNode(n, namedType))
-	}
-
-	return n
+// NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
+// or pointer context. Structs are straightforward in Go but in Java just a PoJo. We do not use records, because
+// they have a different semantic (read only).
+func NewInterface(name string) *Interface {
+	return &Interface{TypeName: name}
 }
 
 // Name returns the declared identifier which must be unique per package.
-func (n *InterfaceNode) Name() string {
-	return n.srcInterface.Name()
+func (s *Interface) Name() string {
+	return s.TypeName
 }
 
-// Doc returns the package documentation.
-func (n *InterfaceNode) Doc() string {
-	return n.srcInterface.Doc()
+// SetName updates the interfaces identifier which must be unique per package.
+func (s *Interface) SetName(name string) *Interface {
+	s.TypeName = name
+	return s
 }
 
-// SrcInterface returns the original interface.
-func (n *InterfaceNode) SrcInterface() *src.Interface {
-	return n.srcInterface
+func (s *Interface) sealedNamedType() {
+	panic("implement me")
 }
 
-// Methods returns the backing slice of the wrapped methods.
-func (n *InterfaceNode) Methods() []*FuncNode {
-	return n.methods
+// SetVisibility sets the visibility. The default is Public.
+func (s *Interface) SetVisibility(v Visibility) *Interface {
+	s.TypeVisibility = v
+	return s
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *InterfaceNode) Parent() Node {
-	return n.parent
+// Visibility returns the current visibility. The default is Public.
+func (s *Interface) Visibility() Visibility {
+	return s.TypeVisibility
 }
 
-// Annotations returns all registered annotations.
-func (n *InterfaceNode) Annotations() []*AnnotationNode {
-	return n.annotations
+// Methods returns all available functions.
+func (s *Interface) Methods() []*Func {
+	return s.TypeMethods
 }
 
-// Types returns all defines subtypes in the scope of this interface.
-func (n *InterfaceNode) Types() []*TypeNode {
-	return n.types
+// AddMethods appends more methods to this interfaces contract.
+func (s *Interface) AddMethods(f ...*Func) *Interface {
+	for _, fun := range f {
+		assertNotAttached(fun)
+		assertSettableParent(fun).SetParent(s)
+		s.TypeMethods = append(s.TypeMethods, fun)
+	}
+
+	return s
+}
+
+// Annotations returns the backing slice of all annotations.
+func (s *Interface) Annotations() []*Annotation {
+	return s.TypeAnnotations
+}
+
+// AddAnnotations appends the given annotations. Note that not all render targets support type annotations, e.g.
+// like Go.
+func (s *Interface) AddAnnotations(a ...*Annotation) *Interface {
+	for _, annotation := range a {
+		assertNotAttached(annotation)
+		assertSettableParent(annotation).SetParent(s)
+		s.TypeAnnotations = append(s.TypeAnnotations, annotation)
+	}
+
+	return s
+}
+
+// AddTypes adds a bunch of named types. This is only allowed in Java and other renderers should
+// either ignore it or place them at the package level (Go).
+func (s *Interface) AddNamedTypes(types ...NamedType) *Interface {
+	for _, namedType := range types {
+		assertNotAttached(namedType)
+		assertSettableParent(namedType).SetParent(s)
+		s.Types = append(s.Types, namedType)
+	}
+
+	return s
+}
+
+// Types returns the backing slice of defined named types.
+func (s *Interface) NamedTypes() []NamedType {
+	return s.Types
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (s *Interface) Children() []Node {
+	tmp := make([]Node, 0, +len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types))
+	for _, param := range s.TypeAnnotations {
+		tmp = append(tmp, param)
+	}
+
+	for _, param := range s.TypeMethods {
+		tmp = append(tmp, param)
+	}
+
+	for _, namedType := range s.Types {
+		tmp = append(tmp, namedType)
+	}
+
+	return tmp
 }

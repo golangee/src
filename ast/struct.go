@@ -1,86 +1,143 @@
 package ast
 
-import (
-	"github.com/golangee/src"
-)
+var _ NamedType = (*Struct)(nil)
 
-// A StructNode represents a data class (e.g. PoJo) or record. However, the actual expected semantic is
-// the Go semantic, other languages which have no value/reference expression, will have a problem and need
-// to fallback to their nearest idiomatic representation.
-type StructNode struct {
-	parent      *TypeNode
-	srcStruct   *src.Struct
-	fields      []*FieldNode
-	annotations []*AnnotationNode
-	types       []*TypeNode
-	methods     []*FuncNode
-	*payload
+// A Struct is actually a data type, like a record. Depending on the language, it can be used in a value or reference
+// context. If supported, the primary use case should be the usage as a value to improve conclusiveness and
+// performance by avoiding heap allocation (and potentially GC overhead). Inheritance is not possible, but other
+// types may be embedded (e.g. in Go). Languages like Java use just simple classes (PoJos), because records have no
+// exclusive use (they are just syntax sugar for a class with final members). In contrast to that, Go cannot express
+// final fields.
+type Struct struct {
+	TypeName        string
+	TypeVisibility  Visibility
+	TypeFields      []*Field
+	TypeStatic      bool
+	TypeAnnotations []*Annotation
+	TypeMethods     []*Func
+	Types           []NamedType // only valid for language which can declare named nested type like java
+	Implements      []Name      // Implements denotes a bunch of interfaces which must be implemented by this struct. Depending on the renderer (like Go) this has no effect.
+	Embedded        []Name      // Embedded is only valid for languages which supports composition at a language level
+	Obj
 }
 
-// NewStructNode wraps the given instance and creates a sub tree with parent/children relations to
-// create a foundation for context-aware renderers.
-func NewStructNode(parent *TypeNode, srcStruct *src.Struct) *StructNode {
-	n := &StructNode{
-		parent:    parent,
-		srcStruct: srcStruct,
-		payload:   newPayload(),
-	}
+// NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
+// or pointer context. Structs are straightforward in Go but in Java just a PoJo. We do not use records, because
+// they have a different semantic (read only).
+func NewStruct(name string) *Struct {
+	return &Struct{TypeName: name}
+}
 
-	for _, f := range srcStruct.Methods() {
-		n.methods = append(n.methods, NewFuncNode(n, f))
-	}
+// Static returns true, if this struct or class should pull its outer scope. This is only for Java and inner classes.
+func (s *Struct) Static() bool {
+	return s.TypeStatic
+}
 
-	for _, field := range srcStruct.Fields() {
-		n.fields = append(n.fields, NewFieldNode(n, field))
-	}
-
-	for _, annotation := range srcStruct.Annotations() {
-		n.annotations = append(n.annotations, NewAnnotationNode(n, annotation))
-	}
-
-	for _, namedType := range srcStruct.Types() {
-		n.types = append(n.types, NewTypeNode(n, namedType))
-	}
-
-	return n
+// SetStatic updates the static flag. Only for Java.
+func (s *Struct) SetStatic(static bool) *Struct {
+	s.TypeStatic = static
+	return s
 }
 
 // Name returns the declared identifier which must be unique per package.
-func (n *StructNode) Name() string {
-	return n.srcStruct.Name()
+func (s *Struct) Name() string {
+	return s.TypeName
 }
 
-// Doc returns the package documentation.
-func (n *StructNode) Doc() string {
-	return n.srcStruct.Doc()
+func (s *Struct) sealedNamedType() {
+	panic("implement me")
 }
 
-// SrcStruct returns the original struct.
-func (n *StructNode) SrcStruct() *src.Struct {
-	return n.srcStruct
+// SetVisibility sets the visibility. The default is Public.
+func (s *Struct) SetVisibility(v Visibility) *Struct {
+	s.TypeVisibility = v
+	return s
 }
 
-// Fields returns the backing slice of the wrapped fields.
-func (n *StructNode) Fields() []*FieldNode {
-	return n.fields
+// Visibility returns the current visibility. The default is Public.
+func (s *Struct) Visibility() Visibility {
+	return s.TypeVisibility
 }
 
-// Parent returns the parent node or nil, if it is the root of the tree.
-func (n *StructNode) Parent() Node {
-	return n.parent
+// AddFields appends the given fields to the struct.
+func (s *Struct) AddFields(fields ...*Field) *Struct {
+	for _, field := range fields {
+		assertNotAttached(field)
+		assertSettableParent(field).SetParent(field)
+		s.TypeFields = append(s.TypeFields, field)
+	}
+	return s
 }
 
-// Annotations returns all registered annotations.
-func (n *StructNode) Annotations() []*AnnotationNode {
-	return n.annotations
+// Fields returns the currently configured fields.
+func (s *Struct) Fields() []*Field {
+	return s.TypeFields
 }
 
-// Types returns all defines subtypes in the scope of this struct.
-func (n *StructNode) Types() []*TypeNode {
-	return n.types
+// Annotations returns the backing slice of all annotations.
+func (s *Struct) Annotations() []*Annotation {
+	return s.TypeAnnotations
 }
 
-// Methods returns the backing slice of the wrapped methods.
-func (n *StructNode) Methods() []*FuncNode {
-	return n.methods
+// AddAnnotations appends the given annotations. Note that not all render targets support type annotations, e.g.
+// like Go.
+func (s *Struct) AddAnnotations(a ...*Annotation) *Struct {
+	for _, annotation := range a {
+		assertNotAttached(annotation)
+		assertSettableParent(annotation).SetParent(s)
+	}
+
+	return s
+}
+
+// Methods returns all available functions.
+func (s *Struct) Methods() []*Func {
+	return s.TypeMethods
+}
+
+// AddMethods appends more methods to this interfaces contract.
+func (s *Struct) AddMethods(f ...*Func) *Struct {
+	for _, fun := range f {
+		assertNotAttached(fun)
+		assertSettableParent(fun).SetParent(s)
+		s.TypeMethods = append(s.TypeMethods, fun)
+	}
+
+	return s
+}
+
+func (s *Struct) NamedTypes() []NamedType {
+	return s.Types
+}
+
+func (s *Struct) AddNamedTypes(t ...NamedType) *Struct {
+	for _, namedType := range t {
+		assertNotAttached(namedType)
+		assertSettableParent(namedType).SetParent(s)
+		s.Types = append(s.Types, namedType)
+	}
+
+	return s
+}
+
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (s *Struct) Children() []Node {
+	tmp := make([]Node, 0, len(s.TypeFields)+len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types))
+	for _, param := range s.TypeAnnotations {
+		tmp = append(tmp, param)
+	}
+
+	for _, param := range s.TypeFields {
+		tmp = append(tmp, param)
+	}
+
+	for _, param := range s.TypeMethods {
+		tmp = append(tmp, param)
+	}
+
+	for _, namedType := range s.Types {
+		tmp = append(tmp, namedType)
+	}
+
+	return tmp
 }
