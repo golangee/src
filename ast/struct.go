@@ -28,6 +28,12 @@ func NewStruct(name string) *Struct {
 	return &Struct{TypeName: name}
 }
 
+// SetComment sets the types comment.
+func (s *Struct) SetComment(text string) *Struct {
+	s.ObjComment = NewComment(text)
+	return s
+}
+
 // Static returns true, if this struct or class should pull its outer scope. This is only for Java and inner classes.
 func (s *Struct) Static() bool {
 	return s.TypeStatic
@@ -40,7 +46,7 @@ func (s *Struct) SetStatic(static bool) *Struct {
 }
 
 // Name returns the declared identifier which must be unique per package.
-func (s *Struct) Name() string {
+func (s *Struct) Identifier() string {
 	return s.TypeName
 }
 

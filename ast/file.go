@@ -9,16 +9,28 @@ type File struct {
 	// A Preamble comment belongs not to any type and is usually
 	// something like a license or generator header as the first comment In the actual file.
 	// The files comment is actually Obj.Comment.
-	Preamble *Comment
-	Name     string
-	Types    []Node
-	Functions    []*Func
+	Preamble  *Comment
+	Name      string
+	Types     []Node
+	Functions []*Func
 	Obj
 }
 
 // NewFile allocates a new File.
 func NewFile(name string) *File {
 	return &File{Name: name}
+}
+
+// SetPreamble sets a non-package comment.
+func (n *File) SetPreamble(text string) *File {
+	n.Preamble = NewComment(text)
+	return n
+}
+
+// SetComment sets the package comment section.
+func (n *File) SetComment(text string) *File {
+	n.ObjComment = NewComment(text)
+	return n
 }
 
 func (n *File) AddTypes(t ...Node) *File {

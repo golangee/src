@@ -22,7 +22,7 @@ func NewInterface(name string) *Interface {
 }
 
 // Name returns the declared identifier which must be unique per package.
-func (s *Interface) Name() string {
+func (s *Interface) Identifier() string {
 	return s.TypeName
 }
 

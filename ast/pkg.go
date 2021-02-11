@@ -1,10 +1,12 @@
 package ast
 
+import "strings"
+
 // A Pkg represents a package and contains compilation units (source code files). Its position relates the local
 // physical folder.
 type Pkg struct {
 	PkgFiles []*File
-	// Path denotes the import path.
+	// Path denotes the import path (separated with slashes, even on windows).
 	//  * Go: the fully qualified Go path or module path for this module.
 	//  * Java: the fully qualified package name.
 	Path string
@@ -23,12 +25,26 @@ type Pkg struct {
 	Obj
 }
 
-// NewPkg creates a new package with the given Path and sets the Name to the last segment.
+// NewPkg creates a new package with the given Path and sets the Name to the last segment. Path names must be
+// separated by / (even on Windows).
 func NewPkg(path string) *Pkg {
+	names := strings.Split(path, "/")
 	return &Pkg{
 		Path: path,
-		Name: Name(path).Identifier(),
+		Name: names[len(names)-1],
 	}
+}
+
+// SetPreamble sets a non-package comment.
+func (n *Pkg) SetPreamble(text string) *Pkg {
+	n.Preamble = NewComment(text)
+	return n
+}
+
+// SetComment sets the package comment section.
+func (n *Pkg) SetComment(text string) *Pkg {
+	n.ObjComment = NewComment(text)
+	return n
 }
 
 // SetName updates the name. Some language targets may ignore that, like Java.

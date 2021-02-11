@@ -1,7 +1,7 @@
 package ast
 
 // A Prj usually refers to a kind of workspace or to the root of a mono repo. In distributed systems,
-// this may be entirely artificially and has not physical correspondence (beside a potential architecture project).
+// this may be entirely artificially and has no physical correspondence (beside a potential architecture project).
 // Most importantly this is the root of heterogen modules, like a go server, a java library and a swift application.
 type Prj struct {
 	Name string

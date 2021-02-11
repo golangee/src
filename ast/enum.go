@@ -9,7 +9,7 @@ type Enum struct {
 	Obj
 }
 
-func (n *Enum) Name() string {
+func (n *Enum) Identifier() string {
 	return n.TypeName
 }
 
