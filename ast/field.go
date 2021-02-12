@@ -11,10 +11,22 @@ type Field struct {
 
 // NewField allocates a new named field. For some renderers like Go, an empty name declares an embedded type.
 func NewField(name string, typeDecl TypeDecl) *Field {
-	return &Field{
+	f := &Field{
 		FieldName: name,
 		FieldType: typeDecl,
 	}
+
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(f)
+
+	return f
+}
+
+// SetComment sets the nodes comment.
+func (f *Field) SetComment(text string) *Field {
+	f.ObjComment = NewComment(text)
+	f.ObjComment.SetParent(f)
+	return f
 }
 
 // SetVisibility updates the fields Visibility. The Go renderer will override the rendered name to match the visibility.
@@ -35,13 +47,18 @@ func (f *Field) SetName(name string) *Field {
 }
 
 // Name returns the fields name.
-func (f *Field) Name() string {
+func (f *Field) Identifier() string {
 	return f.FieldName
 }
 
 // AddAnnotations appends the given annotations or tags to the field.
 func (f *Field) AddAnnotations(a ...*Annotation) *Field {
-	f.FieldAnnotations = append(f.FieldAnnotations, a...)
+	for _, annotation := range a {
+		assertNotAttached(annotation)
+		assertSettableParent(annotation).SetParent(f)
+		f.FieldAnnotations = append(f.FieldAnnotations, annotation)
+	}
+
 	return f
 }
 

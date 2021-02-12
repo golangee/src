@@ -60,7 +60,7 @@ func MatchTargetLanguage(lang Lang, nodes ...Node) func(m *Macro) (bool, []Node)
 				}
 
 				if node.Parent() == nil {
-					assertSettableParent(m)
+					assertSettableParent(node).SetParent(m)
 				}
 
 			}

@@ -20,14 +20,14 @@ func NewAnnotation(name Name) *Annotation {
 	}
 }
 
-// SetName updates the ParamAnnotations AnnotationName.
-func (a *Annotation) SetName(name Name) *Annotation {
+// SetIdentifier updates the ParamAnnotations AnnotationName.
+func (a *Annotation) SetIdentifier(name Name) *Annotation {
 	a.AnnotationName = name
 	return a
 }
 
-// Name returns the ParamAnnotations AnnotationName.
-func (a *Annotation) Name() Name {
+// Identifier returns the ParamAnnotations AnnotationName.
+func (a *Annotation) Identifier() Name {
 	return a.AnnotationName
 }
 

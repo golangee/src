@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"fmt"
 	"github.com/golangee/src/ast"
 	"github.com/golangee/src/golang2/validate"
 	"github.com/golangee/src/render"
@@ -23,21 +24,33 @@ func (r *Renderer) renderStruct(node *ast.Struct, w *render.BufferedWriter) erro
 			}
 		}*/
 
-	/*
-		for _, field := range node.Fields() {
-			if err := renderField(field, w); err != nil {
-				return fmt.Errorf("failed to render field %s: %w", field.SrcField().Name(), err)
-			}
-		}*/
+	for _, field := range node.Fields() {
+		if err := r.renderField(field, w); err != nil {
+			return fmt.Errorf("cannot render field '%s': %w", field.Identifier(), err)
+		}
+
+		// unsure if want to keep a newline, but I find it more readable at least with comment
+		if field.ObjComment != nil {
+			w.Printf("\n")
+		}
+	}
 
 	w.Printf("}\n")
-	/*
-		for _, fun := range node.Methods() {
-			w.Printf("func ")
-			if err := renderFunc(fun, w); err != nil {
-				return fmt.Errorf("failed to render func %s: %w", fun.SrcFunc().Name(), err)
-			}
-		}*/
+
+	for _, fun := range node.Methods() {
+		funComment := r.renderFuncComment(fun)
+		if funComment != "" {
+			r.writeComment(w, false, fun.Identifier(), funComment)
+		}
+
+		w.Printf("func ")
+		if err := r.renderFunc(fun, w); err != nil {
+			return fmt.Errorf("cannot render func '%s': %w", fun.Identifier(), err)
+		}
+
+		// I like a new line after a func
+		w.Printf("\n")
+	}
 
 	return nil
 }

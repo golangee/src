@@ -26,7 +26,7 @@ func (r *Renderer) renderFile(file *ast.File) ([]byte, error) {
 	// render everything into tmp first, the importer beautifies all required imports on-the-go
 	tmp := &render.BufferedWriter{}
 	for _, typ := range file.Types {
-		if err := r.renderType(typ, tmp); err != nil {
+		if err := r.renderNode(typ, tmp); err != nil {
 			return nil, err
 		}
 	}

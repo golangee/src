@@ -8,6 +8,25 @@ type Block struct {
 	Obj
 }
 
+// NewBlock allocates a new block
+func NewBlock(nodes ...Node) *Block {
+	n := &Block{}
+	for _, node := range nodes {
+		assertNotAttached(node)
+		assertSettableParent(node).SetParent(n)
+		n.Nodes = append(n.Nodes, node)
+	}
+
+	return n
+}
+
+// SetComment sets the nodes comment.
+func (n *Block) SetComment(text string) *Block {
+	n.ObjComment = NewComment(text)
+	n.ObjComment.SetParent(n)
+	return n
+}
+
 // Add appends and attaches the given nodes to this block.
 func (n *Block) Add(nodes ...Node) *Block {
 	for _, node := range nodes {

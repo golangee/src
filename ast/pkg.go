@@ -38,12 +38,14 @@ func NewPkg(path string) *Pkg {
 // SetPreamble sets a non-package comment.
 func (n *Pkg) SetPreamble(text string) *Pkg {
 	n.Preamble = NewComment(text)
+	n.Preamble.SetParent(n)
 	return n
 }
 
 // SetComment sets the package comment section.
 func (n *Pkg) SetComment(text string) *Pkg {
 	n.ObjComment = NewComment(text)
+	n.ObjComment.SetParent(n)
 	return n
 }
 

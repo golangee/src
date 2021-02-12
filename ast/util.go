@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-var nodeType = reflect.TypeOf((*error)(nil)).Elem()
+var nodeType = reflect.TypeOf((*Node)(nil)).Elem()
 
 // ParentAs starts at the given node and walks up the parent hierarchy until the first found node is assignable to
 // target or no more parents exists. Example:

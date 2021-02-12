@@ -10,20 +10,32 @@ type Param struct {
 
 // NewParam returns a new named parameter. It is valid to have unnamed parameters In go.
 func NewParam(name string, typeDecl TypeDecl) *Param {
-	return &Param{
+	p := &Param{
 		ParamName:     name,
 		ParamTypeDecl: typeDecl,
 	}
+
+	assertNotAttached(typeDecl)
+	assertSettableParent(typeDecl).SetParent(p)
+
+	return p
 }
 
-// SetName updates the current AnnotationName. An empty AnnotationName is valid for Go, but not for Java.
-func (p *Param) SetName(name string) *Param {
+// SetComment sets the nodes comment.
+func (p *Param) SetComment(text string) *Param {
+	p.ObjComment = NewComment(text)
+	p.ObjComment.SetParent(p)
+	return p
+}
+
+// SetIdentifier updates the current AnnotationName. An empty AnnotationName is valid for Go, but not for Java.
+func (p *Param) SetIdentifier(name string) *Param {
 	p.ParamName = name
 	return p
 }
 
-// Name returns the parameters AnnotationName.
-func (p *Param) Name() string {
+// Identifier returns the parameters AnnotationName.
+func (p *Param) Identifier() string {
 	return p.ParamName
 }
 

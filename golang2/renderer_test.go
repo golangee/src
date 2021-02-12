@@ -3,6 +3,8 @@ package golang
 import (
 	"fmt"
 	. "github.com/golangee/src/ast"
+	"github.com/golangee/src/stdlib"
+	fmt2 "github.com/golangee/src/stdlib/fmt"
 	"testing"
 )
 
@@ -35,7 +37,40 @@ func newProject() *Prj {
 								SetComment("...is a funny package.").
 								AddTypes(
 									NewStruct("HelloWorld").
-										SetComment("... shows a struct."),
+										SetComment("... shows a struct.").
+										AddFields(
+											NewField("Hello", NewSimpleTypeDecl(stdlib.String)).
+												SetComment("...holds a hello string."),
+											NewField("World", NewSimpleTypeDecl(stdlib.String)).
+												SetComment("...holds a world string.").
+												AddAnnotations(
+													NewAnnotation("json").SetDefault("world"),
+													NewAnnotation("db").SetDefault("hello_world"),
+												),
+										).
+										AddMethods(
+											NewFunc("SayHello").
+												SetComment("...shouts it into the world.").
+												SetBody(
+													NewBlock(
+														NewBlock().SetComment("this is a redundant block"),
+													),
+												),
+											NewFunc("Hello2").
+												SetComment("...is a more complex method.").
+												AddParams(
+													NewParam("hey", NewSimpleTypeDecl(stdlib.Int)).SetComment("...declares a number."),
+													NewParam("ho", NewSimpleTypeDecl(stdlib.Float64)).SetComment("...declares a float."),
+												).
+												AddResults(
+													NewParam("", NewSliceTypeDecl(NewSimpleTypeDecl(stdlib.String))).SetComment("...a list of strings."),
+													NewParam("", NewSimpleTypeDecl(stdlib.Error)).SetComment("...is returned if everything fails."),
+												).
+												SetRecName("h").
+												SetBody(NewBlock(
+													fmt2.Println(),
+													)),
+										),
 								),
 						),
 				),

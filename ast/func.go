@@ -21,13 +21,20 @@ func NewFunc(name string) *Func {
 	return &Func{FunName: name}
 }
 
-// Name returns the declared identifier which must be unique in its scope.
-func (s *Func) Name() string {
+// SetComment sets the nodes comment.
+func (s *Func) SetComment(text string) *Func {
+	s.ObjComment = NewComment(text)
+	s.ObjComment.SetParent(s)
+	return s
+}
+
+// Identifier returns the declared identifier which must be unique in its scope.
+func (s *Func) Identifier() string {
 	return s.FunName
 }
 
-// SetName updates the functions name which must be unique in its scope (e.g. type or package).
-func (s *Func) SetName(name string) *Func {
+// SetIdentifier updates the functions name which must be unique in its scope (e.g. type or package).
+func (s *Func) SetIdentifier(name string) *Func {
 	s.FunName = name
 	return s
 }
@@ -70,15 +77,14 @@ func (s *Func) Params() []*Param {
 	return s.FunParams
 }
 
-// SetParams updates the backing array of input parameters.
-func (s *Func) SetParams(params ...*Param) *Func {
-	s.FunParams = params
-	return s
-}
-
-// SetParams adds to the backing array of input parameters.
+// AddParams adds to the backing array of input parameters.
 func (s *Func) AddParams(params ...*Param) *Func {
-	s.FunParams = append(s.FunParams, params...)
+	for _, param := range params {
+		assertNotAttached(param)
+		assertSettableParent(param).SetParent(s)
+		s.FunParams = append(s.FunParams, param)
+	}
+
 	return s
 }
 
@@ -88,20 +94,13 @@ func (s *Func) Results() []*Param {
 	return s.FunResults
 }
 
-// SetResults updates the backing array of the out parameters. In languages which only support none (void) or
-// one result, all following parameters are treated as Exceptions.
-func (s *Func) SetResults(results ...*Param) *Func {
-	s.FunResults = nil
-
-	return s.AddResults(results...)
-}
-
 // AddResults appends to the backing array of the out parameters. In languages which only support none (void) or
 // one result, all following parameters are treated as Exceptions.
 func (s *Func) AddResults(results ...*Param) *Func {
 	for _, result := range results {
 		assertNotAttached(result)
-		assertSettableParent(result).SetParent(result)
+		assertSettableParent(result).SetParent(s)
+		s.FunResults = append(s.FunResults, result)
 	}
 
 	return s

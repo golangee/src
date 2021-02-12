@@ -28,9 +28,10 @@ func NewStruct(name string) *Struct {
 	return &Struct{TypeName: name}
 }
 
-// SetComment sets the types comment.
+// SetComment sets the nodes comment.
 func (s *Struct) SetComment(text string) *Struct {
 	s.ObjComment = NewComment(text)
+	s.ObjComment.SetParent(s)
 	return s
 }
 
@@ -69,7 +70,7 @@ func (s *Struct) Visibility() Visibility {
 func (s *Struct) AddFields(fields ...*Field) *Struct {
 	for _, field := range fields {
 		assertNotAttached(field)
-		assertSettableParent(field).SetParent(field)
+		assertSettableParent(field).SetParent(s)
 		s.TypeFields = append(s.TypeFields, field)
 	}
 	return s

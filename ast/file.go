@@ -24,19 +24,21 @@ func NewFile(name string) *File {
 // SetPreamble sets a non-package comment.
 func (n *File) SetPreamble(text string) *File {
 	n.Preamble = NewComment(text)
+	n.Preamble.SetParent(n)
 	return n
 }
 
 // SetComment sets the package comment section.
 func (n *File) SetComment(text string) *File {
 	n.ObjComment = NewComment(text)
+	n.ObjComment.SetParent(n)
 	return n
 }
 
 func (n *File) AddTypes(t ...Node) *File {
 	for _, node := range t {
 		assertNotAttached(node)
-		assertSettableParent(node).SetParent(node)
+		assertSettableParent(node).SetParent(n)
 		n.Types = append(n.Types, node)
 	}
 
