@@ -5,6 +5,7 @@ import (
 	. "github.com/golangee/src/ast"
 	"github.com/golangee/src/stdlib"
 	fmt2 "github.com/golangee/src/stdlib/fmt"
+	"github.com/golangee/src/stdlib/lang"
 	"testing"
 )
 
@@ -29,6 +30,7 @@ func newProject() *Prj {
 				SetLang(LangGo).
 				AddPackages(
 					NewPkg("github.com/myproject/mymodule/cmd/myapp").
+						SetName("main").
 						SetPreamble(preamble).
 						SetComment("...is the actual package doc.").
 						AddFiles(
@@ -68,9 +70,16 @@ func newProject() *Prj {
 												).
 												SetRecName("h").
 												SetBody(NewBlock(
-													fmt2.Println(),
-													)),
+													fmt2.Println(NewIdent("hey"), NewIdent("ho"), NewStrLit("hello world")), lang.Term(),
+													lang.TryDefine(NewIdent("rows"), lang.CallStatic("sql.query"), "cannot query"),
+												)),
 										),
+								).
+								AddFuncs(
+									NewFunc("globalFunc").
+										SetComment("...is a package private function.").
+										SetVisibility(PackagePrivate).
+										SetBody(NewBlock()),
 								),
 						),
 				),

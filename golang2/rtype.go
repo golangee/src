@@ -20,11 +20,39 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		return r.renderBlock(n, w)
 	case *ast.Macro:
 		if err := r.renderMacro(n, w); err != nil {
-			return fmt.Errorf("cannot render macro: %w",  err)
+			return fmt.Errorf("cannot render macro: %w", err)
 		}
 	case ast.TypeDecl:
 		if err := r.renderTypeDecl(n, w); err != nil {
-			return fmt.Errorf("cannot render TypeDecl: %w",  err)
+			return fmt.Errorf("cannot render TypeDecl: %w", err)
+		}
+	case *ast.CallExpr:
+		if err := r.renderCallExpr(n, w); err != nil {
+			return fmt.Errorf("cannot render CallExpr: %w", err)
+		}
+	case *ast.QualIdent:
+		if err := r.renderQualIdent(n, w); err != nil {
+			return fmt.Errorf("cannot render QualIdent: %w", err)
+		}
+	case *ast.Ident:
+		if err := r.renderIdent(n, w); err != nil {
+			return fmt.Errorf("cannot render Ident: %w", err)
+		}
+	case *ast.SelExpr:
+		if err := r.renderSelExpr(n, w); err != nil {
+			return fmt.Errorf("cannot render SelExpr: %w", err)
+		}
+	case *ast.BasicLit:
+		if err := r.renderBasicLit(n, w); err != nil {
+			return fmt.Errorf("cannot render BasicLit: %w", err)
+		}
+	case *ast.Assign:
+		if err := r.renderAssign(n, w); err != nil {
+			return fmt.Errorf("cannot render Assign: %w", err)
+		}
+	case *ast.Sym:
+		if err := r.renderSym(n, w); err != nil {
+			return fmt.Errorf("cannot render Sym: %w", err)
 		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())

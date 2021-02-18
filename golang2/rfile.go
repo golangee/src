@@ -31,8 +31,13 @@ func (r *Renderer) renderFile(file *ast.File) ([]byte, error) {
 		}
 	}
 
-	for _, node := range file.Functions {
-		if err := r.renderFunc(node, tmp); err != nil {
+	for _, fun := range file.Functions {
+		funComment := r.renderFuncComment(fun)
+		if funComment != "" {
+			r.writeComment(tmp, false, fun.Identifier(), funComment)
+		}
+
+		if err := r.renderFunc(fun, tmp); err != nil {
 			return nil, err
 		}
 	}

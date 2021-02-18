@@ -1,9 +1,10 @@
 package fmt
 
-import "github.com/golangee/src/ast"
+import (
+	"github.com/golangee/src/ast"
+	"github.com/golangee/src/stdlib/lang"
+)
 
-func Println(node ...ast.Node) *ast.Macro {
-	return ast.NewMacro().SetMatchers(
-		ast.MatchTargetLanguage(ast.LangGo, ast.NewSimpleTypeDecl("fmt.Println")),
-	)
+func Println(args ...ast.Expr) *ast.Macro {
+	return lang.CallStatic("fmt.Println", args...)
 }

@@ -37,6 +37,10 @@ func (b *BufferedWriter) Printf(format string, args ...interface{}) {
 	(*bytes.Buffer)(b).WriteString(fmt.Sprintf(format, args...))
 }
 
+func (b *BufferedWriter) Print(a ...interface{}) {
+	(*bytes.Buffer)(b).WriteString(fmt.Sprint(a...))
+}
+
 // String returns the builders text.
 func (b *BufferedWriter) String() string {
 	return (*bytes.Buffer)(b).String()

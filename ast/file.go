@@ -57,7 +57,7 @@ func (n *File) Pkg() *Pkg {
 func (n *File) AddFuncs(t ...*Func) *File {
 	for _, node := range t {
 		assertNotAttached(node)
-		assertSettableParent(node).SetParent(node)
+		assertSettableParent(node).SetParent(n)
 		n.Functions = append(n.Functions, node)
 	}
 

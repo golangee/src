@@ -11,6 +11,10 @@ func NewMacro() *Macro {
 	return &Macro{}
 }
 
+func (n *Macro) exprNode() {
+
+}
+
 // Target returns the available module target information. If there is no target available, all fields are default.
 func (n *Macro) Target() Target {
 	mod := &Mod{}
