@@ -74,3 +74,25 @@ var Types = []string{
 	Rune,
 	Void,
 }
+
+// IsNumber returns true for any int or float.
+func IsNumber(n string) bool {
+	switch n {
+	case Int:
+		fallthrough
+	case Byte:
+		fallthrough
+	case Int16:
+		fallthrough
+	case Int32:
+		fallthrough
+	case Int64:
+		fallthrough
+	case Float32:
+		fallthrough
+	case Float64:
+		return true
+	}
+
+	return false
+}

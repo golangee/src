@@ -1,7 +1,7 @@
 package golang
 
 import (
-	"github.com/golangee/src"
+	"github.com/golangee/src/ast"
 	"github.com/golangee/src/stdlib"
 	"strings"
 )
@@ -11,7 +11,7 @@ import (
 // a lot of context information for it. The Java/JVM model is more or less broken for generics and we just wait until
 // they fix it up (perhaps with valhalla value types). If you want a reasonable memory usage, you probably
 // want a different language anyway.
-func fromStdlib(name src.Name) src.Name {
+func fromStdlib(name ast.Name) ast.Name {
 	switch name {
 	case stdlib.Int:
 		return "int"

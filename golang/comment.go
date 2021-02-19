@@ -1,6 +1,10 @@
 package golang
 
-import "strings"
+import (
+	"github.com/golangee/src/ast"
+	"github.com/golangee/src/render"
+	"strings"
+)
 
 // formatComment replaces a '...' prefix with the ellipsisName and prefixes all lines
 // with a '// '.
@@ -40,4 +44,23 @@ func deEllipsis(ellipsisName, doc string) string {
 	}
 
 	return tmp.String()
+}
+
+func (r *Renderer) writeCommentNode(w *render.BufferedWriter, isPkg bool, name string, comment *ast.Comment) {
+	if comment == nil {
+		return
+	}
+
+	r.writeComment(w, isPkg, name, comment.Text)
+}
+
+func (r *Renderer) writeComment(w *render.BufferedWriter, isPkg bool, name, doc string) {
+	if isPkg {
+		name = "Package " + name
+	}
+
+	myDoc := formatComment(name, doc)
+	if doc != "" {
+		w.Printf(myDoc)
+	}
 }

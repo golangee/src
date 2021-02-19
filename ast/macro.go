@@ -74,3 +74,26 @@ func MatchTargetLanguage(lang Lang, nodes ...Node) func(m *Macro) (bool, []Node)
 		return false, nil
 	}
 }
+
+func MatchTargetLanguageWithContext(lang Lang, f func(m *Macro) []Node) func(m *Macro) (bool, []Node) {
+	return func(m *Macro) (bool, []Node) {
+		nodes := f(m)
+
+		target := m.Target()
+		if target.Lang == lang {
+			for _, node := range nodes {
+				if node.Parent() != nil && node.Parent() != m {
+					assertNotAttached(node)
+				}
+
+				if node.Parent() == nil {
+					assertSettableParent(node).SetParent(m)
+				}
+
+			}
+			return true, nodes
+		}
+
+		return false, nil
+	}
+}

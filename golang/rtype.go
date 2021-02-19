@@ -66,6 +66,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderReturnStmt(n, w); err != nil {
 			return fmt.Errorf("cannot render ReturnStmt: %w", err)
 		}
+	case *ast.CompLit:
+		if err := r.renderCompLit(n, w); err != nil {
+			return fmt.Errorf("cannot render CompLit: %w", err)
+		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}

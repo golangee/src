@@ -58,6 +58,10 @@ type Node interface {
 	Comment() *Comment
 }
 
+func Nodes(n ...Node) []Node {
+	return n
+}
+
 // A Parent is a Node and may contain other nodes as children. This is used to simplify algorithms based on Walk.
 type Parent interface {
 	Node

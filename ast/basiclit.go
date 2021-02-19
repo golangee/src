@@ -27,6 +27,10 @@ func NewStrLit(v string) *BasicLit {
 	return NewBasicLit(TokenString, strconv.Quote(v))
 }
 
+func NewIntLit(i int) *BasicLit {
+	return NewBasicLit(TokenString, strconv.Itoa(i))
+}
+
 func NewBasicLit(kind TokenKind, value string) *BasicLit {
 	return &BasicLit{
 		Kind: kind,

@@ -8,8 +8,8 @@ var nodeType = reflect.TypeOf((*Node)(nil)).Elem()
 
 // ParentAs starts at the given node and walks up the parent hierarchy until the first found node is assignable to
 // target or no more parents exists. Example:
-//   mod := &yast.Mod{}
-//   if ok := yast.ParentAs(&mod, someNode); ok{
+//   mod := &ast.Mod{}
+//   if ok := ast.ParentAs(someNode, &mod); ok{
 //   ...
 //   }
 func ParentAs(node Node, target interface{}) bool {

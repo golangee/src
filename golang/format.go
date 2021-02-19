@@ -1,7 +1,7 @@
 package golang
 
 import (
-	"github.com/golangee/src"
+	"github.com/golangee/src/render"
 	"go/format"
 	"strings"
 	"unicode"
@@ -12,7 +12,7 @@ import (
 func Format(source []byte) ([]byte, error) {
 	buf, err := format.Source(source)
 	if err != nil {
-		return []byte(src.WithLineNumbers(string(source))), err
+		return []byte(render.WithLineNumbers(string(source))), err
 	}
 
 	return buf, nil

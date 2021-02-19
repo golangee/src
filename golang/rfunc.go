@@ -3,7 +3,7 @@ package golang
 import (
 	"fmt"
 	"github.com/golangee/src/ast"
-	"github.com/golangee/src/golang2/validate"
+	"github.com/golangee/src/golang/validate"
 	"github.com/golangee/src/render"
 	"strings"
 )

@@ -66,6 +66,7 @@ func newProject() *Prj {
 												).
 												AddResults(
 													NewParam("", NewSliceTypeDecl(NewSimpleTypeDecl(stdlib.String))).SetComment("...a list of strings."),
+													NewParam("", NewSimpleTypeDecl(stdlib.String)).SetComment("...declares a number."),
 													NewParam("", NewSimpleTypeDecl(stdlib.Error)).SetComment("...is returned if everything fails."),
 												).
 												SetRecName("h").

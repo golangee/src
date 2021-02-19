@@ -18,6 +18,7 @@ type Struct struct {
 	Types           []NamedType // only valid for language which can declare named nested type like java
 	Implements      []Name      // Implements denotes a bunch of interfaces which must be implemented by this struct. Depending on the renderer (like Go) this has no effect.
 	Embedded        []Name      // Embedded is only valid for languages which supports composition at a language level
+	FactoryRefs     []Func      // FactoryRefs are NOT considered children of a struct. They are still connected to a file, however they are considered to be a kind of constructor.
 	Obj
 }
 
@@ -76,6 +77,14 @@ func (s *Struct) AddFields(fields ...*Field) *Struct {
 	return s
 }
 
+// AddFactoryRefs just appends the given funcs for the purpose of factories or constructors. Most importantly
+// Struct does not take the ownership and the parent is still unset (usually a file or another type).
+func (s *Struct) AddFactoryRefs(f ...Func) *Struct {
+	s.FactoryRefs = append(s.FactoryRefs, f...)
+
+	return s
+}
+
 // Fields returns the currently configured fields.
 func (s *Struct) Fields() []*Field {
 	return s.TypeFields
@@ -128,6 +137,7 @@ func (s *Struct) AddNamedTypes(t ...NamedType) *Struct {
 }
 
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
+// FactoryRefs are not considered children, to avoid recursive loops in the AST.
 func (s *Struct) Children() []Node {
 	tmp := make([]Node, 0, len(s.TypeFields)+len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types))
 	for _, param := range s.TypeAnnotations {

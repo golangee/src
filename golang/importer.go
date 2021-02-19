@@ -1,22 +1,29 @@
 package golang
 
 import (
-	"github.com/golangee/src"
 	"github.com/golangee/src/ast"
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
-type importerKey int
+// An importerKey declares a new type to secure private map access.
+type importerKey int32
 
-const importerId importerKey = 1
+// lastImporterKey is a global thread-safe counter.
+var lastImporterKey int32
+
+func nextImporterKey() importerKey {
+	return importerKey(atomic.AddInt32(&lastImporterKey, 1))
+}
 
 // importer manages the rendered import section at the files top.
 type importer struct {
 	namedImports map[string]string // named import => qualifier
 }
 
+// newImporter allocates an according instance.
 func newImporter() *importer {
 	return &importer{
 		namedImports: map[string]string{},
@@ -24,19 +31,33 @@ func newImporter() *importer {
 }
 
 // installImporter installs a new importer instance into every ast.SrcFileNode.
-func installImporter(n *ast.ModNode) {
-	for _, node := range n.Packages() {
-		for _, fileNode := range node.Files() {
-			fileNode.SetValue(importerId, newImporter())
+func installImporter(r *Renderer) error {
+	r.importerId = nextImporterKey()
+	return ast.ForEachMod(r.root, func(mod *ast.Mod) error {
+		for _, pkg := range mod.Pkgs {
+			for _, file := range pkg.PkgFiles {
+				file.PutValue(r.importerId, newImporter())
+			}
 		}
-	}
+
+		return nil
+	})
+}
+
+// installImporter overwrites all registered importers with a nil value.
+func uninstallImporter(r *Renderer) error {
+	return ast.ForEachMod(r.root, func(mod *ast.Mod) error {
+		mod.PutValue(r.importerId, nil)
+
+		return nil
+	})
 }
 
 // importerFromTree walks up the tree until it finds the first importer from any ast.Node.Value.
-func importerFromTree(n ast.Node) *importer {
+func importerFromTree(r *Renderer, n ast.Node) *importer {
 	root := n
 	for root != nil {
-		if imp, ok := root.Value(importerId).(*importer); ok {
+		if imp, ok := root.Value(r.importerId).(*importer); ok {
 			return imp
 		}
 
@@ -71,7 +92,7 @@ func (p *importer) qualifiers() []string {
 // shortify returns a qualified name, which is only valid in the importers scope. It may also decide to not import
 // the given name, e.g. if a collision has been detected. If the name is a universe type or not complete, the original
 // name is just returned.
-func (p *importer) shortify(name src.Name) src.Name {
+func (p *importer) shortify(name ast.Name) ast.Name {
 	qual := name.Qualifier()
 	id := name.Identifier()
 	if id == "" || qual == "" {
@@ -90,7 +111,7 @@ func (p *importer) shortify(name src.Name) src.Name {
 		// already registered the identical qualifier, e.g.
 		// net/http => http
 		if otherQualifier == qual {
-			return src.Name(namedImport + "." + id)
+			return ast.Name(namedImport + "." + id)
 		} else {
 			// name collision, build something artificial with increasing number
 			num := 1
@@ -100,7 +121,7 @@ func (p *importer) shortify(name src.Name) src.Name {
 				otherQualifier, inScope = p.namedImports[namedImport]
 				if inScope {
 					if otherQualifier == qual {
-						return src.Name(namedImport + "." + id)
+						return ast.Name(namedImport + "." + id)
 					}
 					// loop again until either found or no other entry found
 				} else {
@@ -112,5 +133,5 @@ func (p *importer) shortify(name src.Name) src.Name {
 	}
 
 	p.namedImports[namedImport] = qual
-	return src.Name(namedImport + "." + id)
+	return ast.Name(namedImport + "." + id)
 }
