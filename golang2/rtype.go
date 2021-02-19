@@ -54,6 +54,18 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderSym(n, w); err != nil {
 			return fmt.Errorf("cannot render Sym: %w", err)
 		}
+	case *ast.IfStmt:
+		if err := r.renderIfStmt(n, w); err != nil {
+			return fmt.Errorf("cannot render IfStmt: %w", err)
+		}
+	case *ast.BinaryExpr:
+		if err := r.renderBinaryExpr(n, w); err != nil {
+			return fmt.Errorf("cannot render BinaryExpr: %w", err)
+		}
+	case *ast.ReturnStmt:
+		if err := r.renderReturnStmt(n, w); err != nil {
+			return fmt.Errorf("cannot render ReturnStmt: %w", err)
+		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}
