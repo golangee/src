@@ -11,6 +11,17 @@ can emit high quality Go (Golang) and Java source.
 * a big [list](https://github.com/golang/go/wiki/GoGenerateTools) of many *go generate* tools
 * https://elixir-lang.org/
 
+## What is so special?
+* There are a few things, which usually do not belong to an AST
+  * parent-child relations
+  * extra terminator symbols
+* AST Specification cannot only express Go code, but can also represent a mix of other languages
+* Macros which can produce language specific and context dependent AST children
+  to express higher level operations in a cross platform way (e.g. try logic).
+  Macros can evaluate their context and emit type safe code.
+* defining a standard library whose types are translated by the concrete langauge renderer
+* multiple modules in different languages can be represented within the same project tree.
+
 ## example
 
 ```go

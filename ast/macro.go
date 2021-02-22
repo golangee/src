@@ -55,24 +55,9 @@ func (n *Macro) SetMatchers(matchers ...func(m *Macro) (bool, []Node)) *Macro {
 // evaluates to true as soon as the target language matches the given language. The given static nodes
 // are just returned. Note that each node is attached to this macro on successful evaluation.
 func MatchTargetLanguage(lang Lang, nodes ...Node) func(m *Macro) (bool, []Node) {
-	return func(m *Macro) (bool, []Node) {
-		target := m.Target()
-		if target.Lang == lang {
-			for _, node := range nodes {
-				if node.Parent() != nil && node.Parent() != m {
-					assertNotAttached(node)
-				}
-
-				if node.Parent() == nil {
-					assertSettableParent(node).SetParent(m)
-				}
-
-			}
-			return true, nodes
-		}
-
-		return false, nil
-	}
+	return MatchTargetLanguageWithContext(lang, func(m *Macro) []Node {
+		return nodes
+	})
 }
 
 func MatchTargetLanguageWithContext(lang Lang, f func(m *Macro) []Node) func(m *Macro) (bool, []Node) {
