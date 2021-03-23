@@ -78,3 +78,20 @@ func assertSettableParent(node Node) SettableParent {
 		panic("assert: node must be a SettableParent: " + reflect.TypeOf(node).String())
 	}
 }
+
+// ForEach walks recursively over each node and children.
+func ForEach(parent Node, f func(n Node) error) error {
+	if err := f(parent); err != nil {
+		return err
+	}
+
+	if p, ok := parent.(Parent); ok {
+		for _, node := range p.Children() {
+			if err := ForEach(node, f); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
