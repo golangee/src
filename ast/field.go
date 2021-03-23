@@ -6,6 +6,7 @@ type Field struct {
 	FieldName        string
 	FieldType        TypeDecl
 	FieldAnnotations []*Annotation
+	FieldDefault     *BasicLit
 	Obj
 }
 
@@ -18,6 +19,21 @@ func NewField(name string, typeDecl TypeDecl) *Field {
 
 	assertNotAttached(typeDecl)
 	assertSettableParent(typeDecl).SetParent(f)
+
+	return f
+}
+
+// SetDefault attaches the literal to be a field value initializer. This is not supported by all languages (e.g.
+// Go does not have that).
+func (f *Field) SetDefault(lit *BasicLit) *Field {
+	assertNotAttached(lit)
+	assertSettableParent(lit).SetParent(f)
+
+	if f.FieldDefault != nil {
+		f.FieldDefault.SetParent(nil)
+	}
+
+	f.FieldDefault = lit
 
 	return f
 }
@@ -79,10 +95,14 @@ func (f *Field) String() string {
 
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 func (f *Field) Children() []Node {
-	tmp := make([]Node, 0, len(f.FieldAnnotations)+1)
+	tmp := make([]Node, 0, len(f.FieldAnnotations)+1+1)
 	tmp = append(tmp, f.FieldType)
 	for _, annotation := range f.FieldAnnotations {
 		tmp = append(tmp, annotation)
+	}
+
+	if f.FieldDefault != nil {
+		tmp = append(tmp, f.FieldDefault)
 	}
 
 	return tmp
