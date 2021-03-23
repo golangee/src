@@ -19,7 +19,7 @@ can emit high quality Go (Golang) and Java source.
 * Macros which can produce language specific and context dependent AST children
   to express higher level operations in a cross platform way (e.g. try logic).
   Macros can evaluate their context and emit type safe code.
-* defining a standard library whose types are translated by the concrete langauge renderer
+* defining a standard library whose types are translated by the concrete language renderer
 * multiple modules in different languages can be represented within the same project tree.
 
 ## example

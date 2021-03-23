@@ -7,8 +7,25 @@ import (
 	"strconv"
 )
 
+func (r *Renderer) renderAssignComment(node *ast.Assign, w *render.BufferedWriter) {
+	if node.ObjComment != nil {
+		var ellipsisName string
+		if len(node.Lhs) > 0 {
+			if ident, ok := node.Lhs[0].(*ast.Ident); ok {
+				ellipsisName = ident.Name
+			}
+		}
+
+		w.Print(formatComment(ellipsisName, node.ObjComment.Text))
+	}
+}
+
 // renderAssign emits an assignment. If its actually an expression is language dependent.
 func (r *Renderer) renderAssign(node *ast.Assign, w *render.BufferedWriter) error {
+	if _, isConst := node.Parent().(*ast.ConstDecl); !isConst {
+		r.renderAssignComment(node, w)
+	}
+
 	for i, lh := range node.Lhs {
 		if err := r.renderNode(lh, w); err != nil {
 			return fmt.Errorf("unable to render lhs: %w", err)

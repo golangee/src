@@ -23,6 +23,10 @@ type Assign struct {
 	Obj
 }
 
+func NewSimpleAssign(leftIdent *Ident, kind AssignKind, rightLit *BasicLit) *Assign {
+	return NewAssign(Exprs(leftIdent), kind, Exprs(rightLit))
+}
+
 func NewAssign(lhs []Expr, kind AssignKind, rhs []Expr) *Assign {
 	n := &Assign{Kind: kind}
 	for _, lh := range lhs {
@@ -37,6 +41,11 @@ func NewAssign(lhs []Expr, kind AssignKind, rhs []Expr) *Assign {
 		n.Rhs = append(n.Rhs, rh)
 	}
 
+	return n
+}
+
+func (n *Assign) SetComment(text string) *Assign {
+	n.Obj.ObjComment = NewComment(text)
 	return n
 }
 

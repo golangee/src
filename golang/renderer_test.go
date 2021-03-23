@@ -81,7 +81,21 @@ func newProject() *Prj {
 										SetComment("...is a package private function.").
 										SetVisibility(PackagePrivate).
 										SetBody(NewBlock()),
+								).
+								AddNodes(
+									NewConstDecl(
+										NewSimpleAssign(NewIdent("X"), AssignSimple, NewBasicLit(TokenString, "`hello`")).
+											SetComment("...is a constant."),
+									),
+
+									NewConstDecl(
+										NewSimpleAssign(NewIdent("a"), AssignSimple, NewBasicLit(TokenString, "`world`")).
+											SetComment("...is a another."),
+										NewSimpleAssign(NewIdent("b"), AssignSimple, NewBasicLit(TokenString, "4")).
+											SetComment("...another cool constant."),
+									),
 								),
+
 						),
 				),
 

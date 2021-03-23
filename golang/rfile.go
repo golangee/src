@@ -25,26 +25,32 @@ func (r *Renderer) renderFile(file *ast.File) ([]byte, error) {
 
 	// render everything into tmp first, the importer beautifies all required imports on-the-go
 	tmp := &render.BufferedWriter{}
-	for _, typ := range file.Types {
-		if err := r.renderNode(typ, tmp); err != nil {
-			return nil, err
-		}
-	}
+	for _, node := range file.Nodes {
+		switch t := node.(type) {
+		case *ast.Func:
+			funComment := r.renderFuncComment(t)
+			if funComment != "" {
+				r.writeComment(tmp, false, t.Identifier(), funComment)
+			}
 
-	for _, fun := range file.Functions {
-		funComment := r.renderFuncComment(fun)
-		if funComment != "" {
-			r.writeComment(tmp, false, fun.Identifier(), funComment)
-		}
+			if err := r.renderFunc(t, tmp); err != nil {
+				return nil, err
+			}
 
-		if err := r.renderFunc(fun, tmp); err != nil {
-			return nil, err
+		default:
+			if err := r.renderNode(t, tmp); err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	importer := r.importer(file)
-	for namedImport, qualifier := range importer.namedImports {
-		w.Printf("import %s %s\n", namedImport, strconv.Quote(qualifier))
+	if len(importer.namedImports) > 0 {
+		w.Printf("import (\n")
+		for namedImport, qualifier := range importer.namedImports {
+			w.Printf("  %s %s\n", namedImport, strconv.Quote(qualifier))
+		}
+		w.Printf(")\n")
 	}
 
 	w.Printf(tmp.String())
