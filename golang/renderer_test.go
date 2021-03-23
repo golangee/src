@@ -91,7 +91,7 @@ func newProject() *Prj {
 									NewConstDecl(
 										NewSimpleAssign(NewIdent("a"), AssignSimple, NewBasicLit(TokenString, "`world`")).
 											SetComment("...is a another."),
-										NewSimpleAssign(NewIdent("b"), AssignSimple, NewBasicLit(TokenString, "4")).
+										NewSimpleAssign(NewIdent("b"), AssignSimple, NewBasicLit(TokenIdent, "4")).
 											SetComment("...another cool constant."),
 									),
 								),

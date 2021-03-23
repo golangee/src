@@ -14,6 +14,7 @@ const (
 	TokenImag   TokenKind = TokenKind(token.IMAG)
 	TokenChar   TokenKind = TokenKind(token.CHAR)
 	TokenString TokenKind = TokenKind(token.STRING)
+	TokenIdent  TokenKind = TokenKind(token.IDENT)
 )
 
 // A BasicLit represents a literal of a basic type.
@@ -29,6 +30,18 @@ func NewStrLit(v string) *BasicLit {
 
 func NewIntLit(i int) *BasicLit {
 	return NewBasicLit(TokenString, strconv.Itoa(i))
+}
+
+func NewInt64Lit(i int64) *BasicLit {
+	return NewBasicLit(TokenString, strconv.FormatInt(i, 10))
+}
+
+func NewBoolLit(b bool) *BasicLit {
+	return NewBasicLit(TokenIdent, strconv.FormatBool(b))
+}
+
+func NewIdentLit(ident string) *BasicLit {
+	return NewBasicLit(TokenIdent, ident)
 }
 
 func NewBasicLit(kind TokenKind, value string) *BasicLit {
