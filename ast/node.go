@@ -17,19 +17,6 @@ func (p Pos) String() string {
 	return p.File + ":" + strconv.Itoa(p.Line) + ":" + strconv.Itoa(p.Col)
 }
 
-// Tags is just a simple string/interface map to store arbitrary Values. This is especially useful
-// to attach hidden generator information, which otherwise do not fit into an AST.
-type Tags map[string]interface{}
-
-// Get returns the according value or nil. This is nil safe.
-func (t Tags) Get(key string) interface{} {
-	if t == nil {
-		return nil
-	}
-
-	return t[key]
-}
-
 // A Node represents the common contract
 type Node interface {
 	// Pos returns the actual starting position of this Node.
@@ -43,9 +30,6 @@ type Node interface {
 	// which requires a lot of down/up iterations through the (entire) AST. Keeping the relational relation
 	// at the node level keeps things simple and we don't need to pass (path) contexts everywhere.
 	Parent() Node
-
-	// Deprecated: Tags returns access to arbitrary tags. May be nil, so always use the Get accessor.
-	Tags() Tags //TODO do we still need that?
 
 	// Value is like a context Value getter.
 	Value(key interface{}) interface{}
@@ -74,7 +58,6 @@ type Obj struct {
 	ObjPos     Pos
 	ObjEnd     Pos
 	ObjParent  Node
-	ObjTags    Tags
 	ObjComment *Comment // the actual comment of the logical object
 	Values     map[interface{}]interface{}
 }
@@ -93,10 +76,6 @@ func (n *Obj) Parent() Node {
 
 func (n *Obj) SetParent(p Node) {
 	n.ObjParent = p
-}
-
-func (n *Obj) Tags() Tags {
-	return n.ObjTags
 }
 
 func (n *Obj) Comment() *Comment {
