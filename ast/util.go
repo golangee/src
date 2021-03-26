@@ -36,6 +36,7 @@ func ParentAs(node Node, target interface{}) bool {
 
 		node = node.Parent()
 	}
+
 	return false
 }
 

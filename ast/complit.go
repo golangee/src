@@ -8,16 +8,25 @@ type CompLit struct {
 }
 
 func NewCompLit(typ Expr, elems ...Expr) *CompLit {
-	return &CompLit{
+	n := &CompLit{
 		Type:     typ,
 		Elements: elems,
 	}
+
+	assertNotAttached(typ)
+	assertSettableParent(typ).SetParent(n)
+
+	for _, elem := range elems {
+		assertNotAttached(elem)
+		assertSettableParent(elem).SetParent(n)
+	}
+
+	return n
 }
 
 func (n *CompLit) exprNode() {
 
 }
-
 
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 func (n *CompLit) Children() []Node {

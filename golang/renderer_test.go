@@ -6,6 +6,7 @@ import (
 	"github.com/golangee/src/stdlib"
 	fmt2 "github.com/golangee/src/stdlib/fmt"
 	"github.com/golangee/src/stdlib/lang"
+	"github.com/golangee/src/stdlib/strings"
 	"testing"
 )
 
@@ -69,10 +70,17 @@ func newProject() *Prj {
 													NewParam("", NewSimpleTypeDecl(stdlib.String)).SetComment("...declares a number."),
 													NewParam("", NewSimpleTypeDecl(stdlib.Error)).SetComment("...is returned if everything fails."),
 												).
-												SetRecName("h").
+												SetRecName("a").
 												SetBody(NewBlock(
 													fmt2.Println(NewIdent("hey"), NewIdent("ho"), NewStrLit("hello world")), lang.Term(),
 													lang.TryDefine(NewIdent("rows"), lang.CallStatic("sql.query"), "cannot query"),
+													strings.NewStrBuilder("sb",
+														NewStrLit("test"),
+														NewSelExpr(NewIdent("h"), NewIdent("myAttr")),
+														lang.Attr("myAttr"),
+														lang.ToString(lang.Attr("otherAttr")),
+														lang.Itoa(lang.Attr("someInt")),
+													),
 												)),
 										),
 								).

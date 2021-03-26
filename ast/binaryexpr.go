@@ -17,6 +17,7 @@ const (
 	OpShl    Operator = Operator(token.SHL)
 	OpShr    Operator = Operator(token.SHR)
 	OpAndNot Operator = Operator(token.AND_NOT)
+	OpNot    Operator = Operator(token.NOT)
 
 	OpLAnd    Operator = Operator(token.LAND)
 	OpLOr     Operator = Operator(token.LOR)

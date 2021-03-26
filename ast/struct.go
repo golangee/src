@@ -9,17 +9,17 @@ var _ NamedType = (*Struct)(nil)
 // exclusive use (they are just syntax sugar for a class with final members). In contrast to that, Go cannot express
 // final fields.
 type Struct struct {
-	TypeName            string
-	TypeVisibility      Visibility
-	TypeFields          []*Field
-	TypeStatic          bool
-	TypeAnnotations     []*Annotation
-	TypeMethods         []*Func
-	Types               []NamedType // only valid for language which can declare named nested type like java
-	Implements          []Name      // Implements denotes a bunch of interfaces which must be implemented by this struct. Depending on the renderer (like Go) this has no effect.
-	Embedded            []Name      // Embedded is only valid for languages which supports composition at a language level
-	FactoryRefs         []Func      // FactoryRefs are NOT considered children of a struct. They are still connected to a file, however they are considered to be a kind of constructor.
-	DefaultReceiverName string      // useful to transport a standard receiver name. However, you need to care yourself.
+	TypeName        string
+	TypeVisibility  Visibility
+	TypeFields      []*Field
+	TypeStatic      bool
+	TypeAnnotations []*Annotation
+	TypeMethods     []*Func
+	Types           []NamedType // only valid for language which can declare named nested type like java
+	Implements      []Name      // Implements denotes a bunch of interfaces which must be implemented by this struct. Depending on the renderer (like Go) this has no effect.
+	Embedded        []Name      // Embedded is only valid for languages which supports composition at a language level
+	FactoryRefs     []Func      // FactoryRefs are NOT considered children of a struct. They are still connected to a file, however they are considered to be a kind of constructor.
+	DefaultRecName  string      // useful to transport a standard receiver name. However, you need to care yourself.
 	Obj
 }
 
@@ -34,6 +34,11 @@ func NewStruct(name string) *Struct {
 func (s *Struct) SetComment(text string) *Struct {
 	s.ObjComment = NewComment(text)
 	s.ObjComment.SetParent(s)
+	return s
+}
+
+func (s *Struct) SetDefaultRecName(n string) *Struct {
+	s.DefaultRecName = n
 	return s
 }
 

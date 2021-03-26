@@ -62,6 +62,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderBinaryExpr(n, w); err != nil {
 			return fmt.Errorf("cannot render BinaryExpr: %w", err)
 		}
+	case *ast.UnaryExpr:
+		if err := r.renderUnaryExpr(n, w); err != nil {
+			return fmt.Errorf("cannot render UnaryExpr: %w", err)
+		}
 	case *ast.ReturnStmt:
 		if err := r.renderReturnStmt(n, w); err != nil {
 			return fmt.Errorf("cannot render ReturnStmt: %w", err)
