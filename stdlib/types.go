@@ -1,6 +1,9 @@
 package stdlib
 
 const (
+	// Bool renders to the bool in Go or to the java boolean.
+	Bool = "bool!"
+
 	// Int renders platform specific, for Go this is either signed 32 or 64bit but for Java always signed 32bit.
 	Int = "int!"
 
@@ -56,6 +59,7 @@ const (
 
 // Types returns all defined standard library transpiler types.
 var Types = []string{
+	Bool,
 	Int,
 	Byte,
 	Int16,

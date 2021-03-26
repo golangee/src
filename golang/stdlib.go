@@ -64,6 +64,9 @@ func fromStdlib(name ast.Name) ast.Name {
 	case stdlib.Void:
 		return ""
 
+	case stdlib.Bool:
+		return "bool"
+
 	default:
 		if strings.HasSuffix(string(name), "!") {
 			panic("not a stdlib type: " + string(name))
