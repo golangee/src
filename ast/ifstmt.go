@@ -17,7 +17,7 @@ type IfStmt struct {
 }
 
 func NewIfStmt(cond Expr, body *Block) *IfStmt {
-	n:= &IfStmt{
+	n := &IfStmt{
 		Cond: cond,
 		Body: body,
 	}
@@ -27,6 +27,14 @@ func NewIfStmt(cond Expr, body *Block) *IfStmt {
 
 	assertNotAttached(body)
 	assertSettableParent(body).SetParent(n)
+
+	return n
+}
+
+func (n *IfStmt) SetInit(initStmt Node) *IfStmt {
+	n.Init = initStmt
+	assertNotAttached(initStmt)
+	assertSettableParent(initStmt).SetParent(n)
 
 	return n
 }

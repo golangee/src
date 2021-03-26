@@ -9,13 +9,15 @@ import (
 // renderIfStmt emits an if statement.
 func (r *Renderer) renderIfStmt(node *ast.IfStmt, w *render.BufferedWriter) error {
 	if node.Init != nil {
+		w.Print("if ")
 		if err := r.renderNode(node.Init, w); err != nil {
 			return fmt.Errorf("unable to render init: %w", err)
 		}
 		w.Print("; ")
+	} else {
+		w.Print("if ")
 	}
 
-	w.Print("if ")
 	if err := r.renderNode(node.Cond, w); err != nil {
 		return fmt.Errorf("unable to render cond: %w", err)
 	}
