@@ -13,7 +13,7 @@ func NewStrBuilder(ident string, writeStrings ...ast.Expr) *ast.Macro {
 				var nodes []ast.Node
 				nodes = append(nodes, decl, ast.NewSym(ast.SymNewline))
 				for _, writeString := range writeStrings {
-					nodes = append(nodes, lang.CallStatic("sb.WriteString", writeString), ast.NewSym(ast.SymNewline))
+					nodes = append(nodes, lang.CallIdent("sb", "WriteString", writeString), ast.NewSym(ast.SymNewline))
 				}
 
 				return nodes

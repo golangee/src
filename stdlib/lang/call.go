@@ -9,6 +9,20 @@ func CallStatic(name ast.Name, args ...ast.Expr) *ast.Macro {
 	)
 }
 
+// CallIdent is like CallStatic but does not cause an import because it just uses local identifiers for the receiver and method.
+func CallIdent(ident, method string, args ...ast.Expr) *ast.Macro {
+	return ast.NewMacro().SetMatchers(
+		ast.MatchTargetLanguage(ast.LangGo, ast.NewCallExpr(ast.NewSelExpr(ast.NewIdent(ident), ast.NewIdent(method)), args...)),
+	)
+}
+
+// Call is like CallIdent but does not cause an import because it just uses a local identifier (like a static method).
+func Call(ident string, args ...ast.Expr) *ast.Macro {
+	return ast.NewMacro().SetMatchers(
+		ast.MatchTargetLanguage(ast.LangGo, ast.NewCallExpr(ast.NewIdent(ident), args...)),
+	)
+}
+
 // CreateLiteral takes the
 func CreateLiteral(name ast.Name, args ...ast.Expr) *ast.Macro {
 	return ast.NewMacro().SetMatchers(
