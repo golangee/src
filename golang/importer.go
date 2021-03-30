@@ -118,7 +118,7 @@ func (p *importer) shortify(name ast.Name) ast.Name {
 			for {
 				num++
 				namedImport2 := namedImport + strconv.Itoa(num)
-				otherQualifier, inScope = p.namedImports[namedImport]
+				otherQualifier, inScope = p.namedImports[namedImport2]
 				if inScope {
 					if otherQualifier == qual {
 						return ast.Name(namedImport + "." + id)

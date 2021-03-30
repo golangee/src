@@ -111,6 +111,13 @@ func (t *SimpleTypeDecl) exprNode() {
 	panic("sealed type")
 }
 
+func (t *SimpleTypeDecl) Clone() *SimpleTypeDecl {
+	return &SimpleTypeDecl{
+		SimpleName: t.SimpleName,
+		Obj:        *t.Obj.Clone(),
+	}
+}
+
 //======
 
 // A GenericTypeDecl refers to a named type and contains (optional) named type parameters, commonly known as generics.

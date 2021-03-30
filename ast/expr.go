@@ -7,7 +7,14 @@ type Expr interface {
 	exprNode() // marker interface method
 }
 
-// Exprs is a builder helper for vargs.
+// Exprs is a builder helper for varargs. It filters out nil expressions
 func Exprs(expr ...Expr) []Expr {
-	return expr
+	tmp := make([]Expr, 0, len(expr))
+	for _, e := range expr {
+		if e != nil{
+			tmp = append(tmp, e)
+		}
+	}
+
+	return tmp
 }

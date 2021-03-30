@@ -13,3 +13,19 @@ type Comment struct {
 func NewComment(text string) *Comment {
 	return &Comment{Text: text}
 }
+
+func (n *Comment) Clone() *Comment {
+	if n == nil {
+		return nil
+	}
+
+	c := &Comment{
+		Text: n.Text,
+	}
+
+	if n.ObjComment != nil {
+		c.ObjComment = n.ObjComment.Clone()
+	}
+
+	return c
+}

@@ -35,6 +35,18 @@ func NewPkg(path string) *Pkg {
 	}
 }
 
+// Interfaces returns a defensive copy of all found interfaces.
+func (n *Pkg) Interfaces() []*Interface {
+	var r []*Interface
+	for _, file := range n.PkgFiles {
+		for _, i := range file.Interfaces() {
+			r = append(r, i)
+		}
+	}
+
+	return r
+}
+
 // SetPreamble sets a non-package comment.
 func (n *Pkg) SetPreamble(text string) *Pkg {
 	n.Preamble = NewComment(text)

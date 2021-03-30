@@ -40,8 +40,12 @@ func TryDefine(lhs, rhs ast.Expr, errMsg string) *ast.Macro {
 							results = append(results, ast.NewStrLit(""))
 						} else
 						{
-							// TODO this is not always correct and cannot always be resolved due to external dependencies
-							results = append(results, ast.NewCompLit(t))
+							if isInterface(myFunc, t.SimpleName) {
+								results = append(results, ast.NewIdent("nil"))
+							} else {
+								// TODO this is not always correct and cannot always be resolved due to external dependencies
+								results = append(results, ast.NewCompLit(t.Clone()))
+							}
 						}
 					case *ast.SliceTypeDecl:
 						results = append(results, ast.NewIdent("nil"))
@@ -53,17 +57,43 @@ func TryDefine(lhs, rhs ast.Expr, errMsg string) *ast.Macro {
 
 				results = append(results, CallStatic("fmt.Errorf", ast.NewStrLit(errMsg+": %w"), ast.NewIdent("err")))
 
-				return ast.Nodes(
-					ast.NewAssign(ast.Exprs(lhs, ast.NewIdent("err")), ast.AssignDefine, ast.Exprs(rhs)),
-					Term(),
-					ast.NewIfStmt(ast.NewBinaryExpr(ast.NewIdent("err"), ast.OpNotEqual, ast.NewIdent("nil")), ast.NewBlock(
-						ast.NewReturnStmt(results...),
-					)),
-				)
+				if lhs == nil {
+					return ast.Nodes(
+						ast.NewIfStmt(ast.NewBinaryExpr(ast.NewIdent("err"), ast.OpNotEqual, ast.NewIdent("nil")), ast.NewBlock(
+							ast.NewReturnStmt(results...),
+						)).SetInit(ast.NewAssign(ast.Exprs(lhs, ast.NewIdent("err")), ast.AssignDefine, ast.Exprs(rhs))),
+
+
+						Term(),
+
+					)
+				} else {
+					return ast.Nodes(
+						ast.NewAssign(ast.Exprs(lhs, ast.NewIdent("err")), ast.AssignDefine, ast.Exprs(rhs)),
+						Term(),
+						ast.NewIfStmt(ast.NewBinaryExpr(ast.NewIdent("err"), ast.OpNotEqual, ast.NewIdent("nil")), ast.NewBlock(
+							ast.NewReturnStmt(results...),
+						)),
+						Term(),
+					)
+				}
 			},
 
 		),
 	)
+}
+
+// not yet correct but can identify package local interfaces
+func isInterface(scope ast.Node, name ast.Name) bool {
+	pkg := assertPkg(scope)
+
+	for _, i := range pkg.Interfaces() {
+		if i.TypeName == string(name) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // there is always an outer func definition
@@ -74,4 +104,14 @@ func assertFunc(n ast.Node) *ast.Func {
 	}
 
 	panic("invalid context: must be a func child")
+}
+
+// there is always an outer pkg definition
+func assertPkg(n ast.Node) *ast.Pkg {
+	f := &ast.Pkg{}
+	if ok := ast.ParentAs(n, &f); ok {
+		return f
+	}
+
+	panic("invalid context: must be a pkg child")
 }

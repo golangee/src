@@ -68,6 +68,21 @@ func newProject() *Prj {
 														NewBlock().SetComment("this is a redundant block"),
 													),
 												),
+											NewFunc("IFaceTryEvil").
+												AddResults(
+													NewParam("", NewSimpleTypeDecl("HelloIface")),
+													NewParam("", NewSimpleTypeDecl(stdlib.Error)),
+												).SetBody(NewBlock(
+												lang.TryDefine(NewIdent("db"),
+													lang.CallStatic("database/sql.Open", lang.CallIdent("opts", "DSN")),
+													"asdf",
+												),
+
+												lang.TryDefine(nil,
+													lang.CallStatic("database/sql.Open", lang.CallIdent("opts", "DSN")),
+													"asdf",
+												),
+											)),
 											NewFunc("Hello2").
 												SetComment("...is a more complex method.").
 												AddParams(

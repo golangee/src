@@ -111,6 +111,21 @@ func (n *Obj) PutValue(key, value interface{}) {
 
 }
 
+func (n *Obj) Clone() *Obj {
+	values := make(map[interface{}]interface{})
+	for k, v := range n.Values {
+		values[k] = v
+	}
+
+	return &Obj{
+		ObjPos:     n.ObjPos,
+		ObjEnd:     n.ObjEnd,
+		ObjParent:  nil,
+		ObjComment: n.ObjComment.Clone(),
+		Values:     values,
+	}
+}
+
 type SettableParent interface {
 	Node
 	SetParent(p Node)

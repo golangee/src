@@ -99,6 +99,19 @@ func (n *File) Funcs() []*Func {
 	return res
 }
 
+// Interfaces returns all declared interfaces.
+func (n *File) Interfaces() []*Interface {
+	var res []*Interface
+
+	for _, node := range n.Nodes {
+		if f, ok := node.(*Interface); ok {
+			res = append(res, f)
+		}
+	}
+
+	return res
+}
+
 // Imports returns all manually declared imports. Automatically derived imports are not returned.
 func (n *File) Imports() []*Import {
 	var res []*Import
