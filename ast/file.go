@@ -99,6 +99,19 @@ func (n *File) Funcs() []*Func {
 	return res
 }
 
+// Imports returns all manually declared imports. Automatically derived imports are not returned.
+func (n *File) Imports() []*Import {
+	var res []*Import
+
+	for _, node := range n.Nodes {
+		if f, ok := node.(*Import); ok {
+			res = append(res, f)
+		}
+	}
+
+	return res
+}
+
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 func (n *File) Children() []Node {
 	return append([]Node{}, n.Nodes...)

@@ -83,6 +83,9 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderInterface(n, w); err != nil {
 			return fmt.Errorf("cannot render Interface: %w", err)
 		}
+
+	case *ast.Import:
+		// handled by Renderer.renderFile
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}

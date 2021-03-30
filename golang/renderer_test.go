@@ -38,6 +38,7 @@ func newProject() *Prj {
 							NewFile("main.go").
 								SetPreamble(preamble).
 								SetComment("...is a funny package.").
+								AddNodes(NewImport("_", "github.com/go-sql-driver/mysql")).
 								AddTypes(
 									NewInterface("HelloIface").
 										SetComment("...says hello").
