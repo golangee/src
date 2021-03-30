@@ -2,6 +2,21 @@ package lang
 
 import "github.com/golangee/src/ast"
 
+// Sel creates a reference or selector chain through all given names. So a Sel(a, b, c) results in a.b.c
+func Sel(names ...string) *ast.Macro {
+	return ast.NewMacro().SetMatchers(
+		ast.MatchTargetLanguage(ast.LangGo, selRecursive(names...)),
+	)
+}
+
+func selRecursive(names ...string) ast.Expr {
+	if len(names) == 1 {
+		return ast.NewIdent(names[0])
+	}
+
+	return ast.NewSelExpr(selRecursive(names[:len(names)-1]...), ast.NewIdent(names[len(names)-1]))
+}
+
 // CallStatic interprets the name as qualified and causes an import of the qualifier.
 func CallStatic(name ast.Name, args ...ast.Expr) *ast.Macro {
 	return ast.NewMacro().SetMatchers(

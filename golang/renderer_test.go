@@ -82,6 +82,8 @@ func newProject() *Prj {
 													lang.CallStatic("database/sql.Open", lang.CallIdent("opts", "DSN")),
 													"asdf",
 												),
+
+												lang.Sel("a", "b", "c"),
 											)),
 											NewFunc("Hello2").
 												SetComment("...is a more complex method.").
