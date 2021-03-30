@@ -21,6 +21,13 @@ func NewInterface(name string) *Interface {
 	return &Interface{TypeName: name}
 }
 
+// SetComment sets the nodes comment.
+func (s *Interface) SetComment(text string) *Interface {
+	s.ObjComment = NewComment(text)
+	s.ObjComment.SetParent(s)
+	return s
+}
+
 // Name returns the declared identifier which must be unique per package.
 func (s *Interface) Identifier() string {
 	return s.TypeName

@@ -79,7 +79,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderConst(n, w); err != nil {
 			return fmt.Errorf("cannot render ConstDecl: %w", err)
 		}
-
+	case *ast.Interface:
+		if err := r.renderInterface(n, w); err != nil {
+			return fmt.Errorf("cannot render Interface: %w", err)
+		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}

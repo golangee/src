@@ -39,6 +39,14 @@ func newProject() *Prj {
 								SetPreamble(preamble).
 								SetComment("...is a funny package.").
 								AddTypes(
+									NewInterface("HelloIface").
+										SetComment("...says hello").
+										AddMethods(
+											NewFunc("Wayne").
+												SetComment("...cares a lot.").
+												AddParams(NewParam("hey", NewSimpleTypeDecl("string"))),
+										),
+
 									NewStruct("HelloWorld").
 										SetComment("... shows a struct.").
 										AddFields(
