@@ -84,6 +84,41 @@ func newProject() *Prj {
 												),
 
 												lang.Sel("a", "b", "c"),
+												lang.Term(),
+
+												NewForStmt(
+													NewSimpleAssign(NewIdent("i"), AssignDefine, NewIntLit(0)),
+													NewBinaryExpr(NewIdent("i"), OpLess, NewIntLit(10)),
+													NewUnaryExpr(NewIdent("i"), OpInc),
+													NewBlock(),
+												),
+												lang.Term(),
+
+
+												NewRangeStmt(
+													NewIdent("idx"),
+													NewIdent("val"),
+													lang.CallStatic("strings.Split", NewStrLit("hello"), NewStrLit("l")),
+													NewBlock(),
+												),
+												lang.Term(),
+
+												NewRangeStmt(
+													nil,
+													NewIdent("val"),
+													lang.CallStatic("strings.Split", NewStrLit("hello"), NewStrLit("l")),
+													NewBlock(),
+												),
+												lang.Term(),
+
+												NewRangeStmt(
+													NewIdent("idx"),
+													nil,
+													lang.CallStatic("strings.Split", NewStrLit("hello"), NewStrLit("l")),
+													NewBlock(),
+												),
+												lang.Term(),
+
 											)),
 											NewFunc("Hello2").
 												SetComment("...is a more complex method.").

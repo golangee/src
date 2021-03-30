@@ -26,6 +26,9 @@ const (
 	OpLess    Operator = Operator(token.LSS)
 	OpGreater Operator = Operator(token.GTR)
 
+	OpInc Operator = Operator(token.INC)
+	OpDec Operator = Operator(token.DEC)
+
 	OpNotEqual     Operator = Operator(token.NEQ)
 	OpLessEqual    Operator = Operator(token.LEQ)
 	OpGreaterEqual Operator = Operator(token.GEQ)

@@ -85,7 +85,17 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		}
 
 	case *ast.Import:
-		// handled by Renderer.renderFile
+	// handled by Renderer.renderFile
+
+	case *ast.ForStmt:
+		if err := r.renderForStmt(n, w); err != nil {
+			return fmt.Errorf("cannot render for statement: %w", err)
+		}
+
+	case *ast.RangeStmt:
+		if err := r.renderRangeStmt(n, w); err != nil {
+			return fmt.Errorf("cannot render range statement: %w", err)
+		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}
