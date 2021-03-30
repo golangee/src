@@ -4,6 +4,7 @@ import (
 	"github.com/golangee/src/ast"
 	"github.com/golangee/src/render"
 	"strconv"
+	"strings"
 )
 
 // renderFile generates the code for the entire file.
@@ -45,15 +46,27 @@ func (r *Renderer) renderFile(file *ast.File) ([]byte, error) {
 	}
 
 	importer := r.importer(file)
-	if len(importer.namedImports) > 0 {
+	if len(importer.namedImports) > 0 || len(file.Imports()) > 0 {
 		w.Printf("import (\n")
 		for namedImport, qualifier := range importer.namedImports {
 			w.Printf("  %s %s\n", namedImport, strconv.Quote(qualifier))
 		}
 
 		for _, imp := range file.Imports() {
-			w.Printf("  %s %s\n", imp.Ident, strconv.Quote(string(imp.Name)))
+			comment := strings.TrimSpace(formatComment(imp.Ident, imp.CommentText()))
+			multiline := strings.LastIndex(comment, "\n") > 0
+			if multiline {
+				r.writeComment(w, false, "", comment)
+			}
+
+			w.Printf("  %s %s", imp.Ident, strconv.Quote(string(imp.Name)))
+			if len(comment) > 0 && !multiline {
+				w.Printf(comment)
+			}
+
+			w.Printf("\n")
 		}
+
 		w.Printf(")\n")
 	}
 

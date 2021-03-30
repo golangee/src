@@ -7,7 +7,7 @@ import (
 )
 
 // formatComment replaces a '...' prefix with the ellipsisName and prefixes all lines
-// with a '// '.
+// with a '// '. If doc is empty, the empty string is returned.
 func formatComment(ellipsisName, doc string) string {
 	doc = strings.TrimSpace(doc)
 	if len(doc) > 0 {

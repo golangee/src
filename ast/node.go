@@ -82,6 +82,15 @@ func (n *Obj) Comment() *Comment {
 	return n.ObjComment
 }
 
+// CommentText returns either the empty string or the comments text.
+func (n *Obj) CommentText() string {
+	if n == nil || n.ObjComment == nil {
+		return ""
+	}
+
+	return n.ObjComment.Text
+}
+
 // Value is like a context Value getter.
 func (n *Obj) Value(key interface{}) interface{} {
 	if n.Values == nil {
