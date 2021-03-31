@@ -79,6 +79,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderConst(n, w); err != nil {
 			return fmt.Errorf("cannot render ConstDecl: %w", err)
 		}
+	case *ast.VarDecl:
+		if err := r.renderVar(n, w); err != nil {
+			return fmt.Errorf("cannot render VarDecl: %w", err)
+		}
 	case *ast.Interface:
 		if err := r.renderInterface(n, w); err != nil {
 			return fmt.Errorf("cannot render Interface: %w", err)
@@ -95,6 +99,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 	case *ast.RangeStmt:
 		if err := r.renderRangeStmt(n, w); err != nil {
 			return fmt.Errorf("cannot render range statement: %w", err)
+		}
+	case *ast.Param:
+		if err := r.renderParam(n, w); err != nil {
+			return fmt.Errorf("cannot render param: %w", err)
 		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())

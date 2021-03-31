@@ -4,25 +4,43 @@ import (
 	"fmt"
 	"github.com/golangee/src/ast"
 	"github.com/golangee/src/render"
+	"reflect"
 	"strconv"
 )
 
-func (r *Renderer) renderAssignComment(node *ast.Assign, w *render.BufferedWriter) {
-	if node.ObjComment != nil {
-		var ellipsisName string
-		if len(node.Lhs) > 0 {
-			if ident, ok := node.Lhs[0].(*ast.Ident); ok {
-				ellipsisName = ident.Name
+func (r *Renderer) renderAssignComment(node ast.Node, w *render.BufferedWriter) {
+	if node, ok := node.(*ast.Assign); ok {
+		if node.ObjComment != nil {
+			var ellipsisName string
+			if len(node.Lhs) > 0 {
+				if ident, ok := node.Lhs[0].(*ast.Ident); ok {
+					ellipsisName = ident.Name
+				}
 			}
+
+			w.Print(formatComment(ellipsisName, node.ObjComment.Text))
 		}
 
-		w.Print(formatComment(ellipsisName, node.ObjComment.Text))
+		return
 	}
+
+	if node, ok := node.(*ast.Param); ok {
+		if node.ObjComment != nil {
+			var ellipsisName = node.ParamName
+			w.Print(formatComment(ellipsisName, node.ObjComment.Text))
+		}
+
+		return
+	}
+
+	panic("unsupported type: " + reflect.TypeOf(node).String())
 }
 
 // renderAssign emits an assignment. If its actually an expression is language dependent.
 func (r *Renderer) renderAssign(node *ast.Assign, w *render.BufferedWriter) error {
-	if _, isConst := node.Parent().(*ast.ConstDecl); !isConst {
+	_, isConst := node.Parent().(*ast.ConstDecl)
+	_, isVar := node.Parent().(*ast.VarDecl)
+	if !isConst && !isVar {
 		r.renderAssignComment(node, w)
 	}
 

@@ -5,7 +5,7 @@ import (
 	"github.com/golangee/src/render"
 )
 
-// renderSym emits an imported qualifier.
+// renderConst emits a single or multiple const block.
 func (r *Renderer) renderConst(node *ast.ConstDecl, w *render.BufferedWriter) error {
 	if len(node.Assignments) == 0 {
 		return nil

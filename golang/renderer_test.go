@@ -163,6 +163,19 @@ func newProject() *Prj {
 										NewSimpleAssign(NewIdent("b"), AssignSimple, NewBasicLit(TokenIdent, "4")).
 											SetComment("...another cool constant."),
 									),
+
+									NewVarDecl(
+										NewSimpleAssign(NewIdent("v"), AssignSimple, NewBasicLit(TokenString, "`dude`")).
+											SetComment("...is another var."),
+									),
+
+									NewVarDecl(
+										NewSimpleAssign(NewIdent("v2"), AssignSimple, NewBasicLit(TokenString, "`dude2`")).
+											SetComment("...is another var."),
+										NewSimpleAssign(NewIdent("v3"), AssignSimple, NewBasicLit(TokenString, "`dude3`")).
+											SetComment("...is another var."),
+										NewParam("v4", NewSliceTypeDecl(NewSimpleTypeDecl(stdlib.String))),
+									),
 								),
 
 						),

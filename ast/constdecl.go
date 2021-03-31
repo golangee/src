@@ -8,7 +8,7 @@ package ast
 //    )
 //
 //  Java:
-//    public static final X = "abc
+//    public static final String X = "abc
 type ConstDecl struct {
 	Assignments []*Assign
 	Obj
