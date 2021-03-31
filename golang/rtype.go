@@ -109,6 +109,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderDeferStmt(n, w); err != nil {
 			return fmt.Errorf("cannot render defer statement: %w", err)
 		}
+	case *ast.Tpl:
+		if err := r.renderTpl(n, w); err != nil {
+			return fmt.Errorf("cannot render template node: %w", err)
+		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}

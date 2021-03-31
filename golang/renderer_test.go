@@ -121,6 +121,15 @@ func newProject() *Prj {
 
 												NewForStmt(nil, lang.CallIdent("rows", "Next"), nil, NewBlock()),
 
+												NewTpl(`// having a hard days life
+{
+var (x string = "abc") // ugly
+/* don't do this at home */
+fmt.Println({{ .Use "unsafe.Pointer"}}(x))
+fmt.Println({{.Get "var"}})
+}
+`).Put("var","XYZ"),
+
 											)),
 											NewFunc("Hello2").
 												SetComment("...is a more complex method.").
