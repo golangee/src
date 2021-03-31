@@ -8,8 +8,8 @@ import (
 
 // renderForStmt emits a for statement.
 func (r *Renderer) renderForStmt(node *ast.ForStmt, w *render.BufferedWriter) error {
+	w.Print("for ")
 	if node.Init != nil {
-		w.Print("for ")
 		if err := r.renderNode(node.Init, w); err != nil {
 			return fmt.Errorf("unable to render init: %w", err)
 		}
@@ -21,11 +21,10 @@ func (r *Renderer) renderForStmt(node *ast.ForStmt, w *render.BufferedWriter) er
 		if err := r.renderNode(node.Cond, w); err != nil {
 			return fmt.Errorf("unable to render cond: %w", err)
 		}
-		w.Print("; ")
 	}
 
 	if node.Post != nil {
-		w.Print(" ")
+		w.Print("; ")
 		if err := r.renderNode(node.Post, w); err != nil {
 			return fmt.Errorf("unable to render post: %w", err)
 		}

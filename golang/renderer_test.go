@@ -119,6 +119,8 @@ func newProject() *Prj {
 												),
 												lang.Term(),
 
+												NewForStmt(nil, lang.CallIdent("rows", "Next"), nil, NewBlock()),
+
 											)),
 											NewFunc("Hello2").
 												SetComment("...is a more complex method.").
