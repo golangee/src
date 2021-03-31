@@ -142,6 +142,7 @@ func newProject() *Prj {
 														lang.ToString(lang.Attr("otherAttr")),
 														lang.Itoa(lang.Attr("someInt")),
 													),
+													NewDeferStmt(lang.CallIdent("db", "Close")),
 												)),
 										),
 								).
