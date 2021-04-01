@@ -44,7 +44,8 @@ func (t *tplRenderContext) Get(key string) string {
 }
 
 func (t *tplRenderContext) Use(name string) string {
-	return string(t.importer.shortify(ast.Name(name)))
+	goType := fromStdlib(ast.Name(name))
+	return string(t.importer.shortify(goType))
 }
 
 func (t *tplRenderContext) Self() *ast.Tpl {
