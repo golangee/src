@@ -17,7 +17,7 @@ type Struct struct {
 	TypeMethods     []*Func
 	Types           []NamedType // only valid for language which can declare named nested type like java
 	Implements      []Name      // Implements denotes a bunch of interfaces which must be implemented by this struct. Depending on the renderer (like Go) this has no effect.
-	Embedded        []Name      // Embedded is only valid for languages which supports composition at a language level
+	Embedded        []TypeDecl  // Embedded is only valid for languages which supports composition at a language level
 	FactoryRefs     []Func      // FactoryRefs are NOT considered children of a struct. They are still connected to a file, however they are considered to be a kind of constructor.
 	DefaultRecName  string      // useful to transport a standard receiver name. However, you need to care yourself.
 	Obj
@@ -28,6 +28,17 @@ type Struct struct {
 // they have a different semantic (read only).
 func NewStruct(name string) *Struct {
 	return &Struct{TypeName: name}
+}
+
+func (s *Struct) AddEmbedded(t...TypeDecl) *Struct {
+	for _, decl := range t {
+		assertNotAttached(decl)
+		assertSettableParent(decl).SetParent(s)
+
+		s.Embedded = append(s.Embedded, decl)
+	}
+
+	return s
 }
 
 // SetComment sets the nodes comment.

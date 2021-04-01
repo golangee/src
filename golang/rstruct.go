@@ -35,6 +35,12 @@ func (r *Renderer) renderStruct(node *ast.Struct, w *render.BufferedWriter) erro
 		}
 	}
 
+	for _, decl := range node.Embedded {
+		if err := r.renderTypeDecl(decl, w); err != nil {
+			return fmt.Errorf("cannot render embedded decl '%s': %w", decl.String(), err)
+		}
+	}
+
 	w.Printf("}\n")
 
 	for _, fun := range node.Methods() {

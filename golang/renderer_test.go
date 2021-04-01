@@ -60,6 +60,7 @@ func newProject() *Prj {
 													NewAnnotation("db").SetDefault("hello_world"),
 												),
 										).
+										AddEmbedded(NewSimpleTypeDecl("sync.Mutex")).
 										AddMethods(
 											NewFunc("SayHello").
 												SetComment("...shouts it into the world.").
@@ -128,7 +129,7 @@ var (x string = "abc") // ugly
 fmt.Println({{ .Use "unsafe.Pointer"}}(x))
 fmt.Println({{.Get "var"}})
 }
-`).Put("var","XYZ"),
+`).Put("var", "XYZ"),
 
 											)),
 											NewFunc("Hello2").
