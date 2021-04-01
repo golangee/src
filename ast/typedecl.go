@@ -33,10 +33,14 @@ type TypeDecl interface {
 	// String returns a human readable declaration for debugging purposes.
 	String() string
 
+	// Clone allocates a new instance without a parent.
+	Clone() TypeDecl
+
 	// sealedTypeDecl ensures that nobody can implement his own TypeDecl which is generally not acceptable for
 	// our code generators.
 	sealedTypeDecl()
 
+	Expr
 	Node
 }
 
@@ -69,6 +73,17 @@ func (t *TypeDeclPtr) String() string {
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 func (t *TypeDeclPtr) Children() []Node {
 	return []Node{t.Decl}
+}
+
+func (t *TypeDeclPtr) Clone() TypeDecl {
+	return &TypeDeclPtr{
+		Decl: t.Clone(),
+		Obj:  *t.Obj.Clone(),
+	}
+}
+
+func (t *TypeDeclPtr) exprNode() {
+
 }
 
 func (t *TypeDeclPtr) sealedTypeDecl() {
@@ -111,7 +126,7 @@ func (t *SimpleTypeDecl) exprNode() {
 	panic("sealed type")
 }
 
-func (t *SimpleTypeDecl) Clone() *SimpleTypeDecl {
+func (t *SimpleTypeDecl) Clone() TypeDecl {
 	return &SimpleTypeDecl{
 		SimpleName: t.SimpleName,
 		Obj:        *t.Obj.Clone(),
@@ -190,6 +205,23 @@ func (t *GenericTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
+func (t *GenericTypeDecl) exprNode() {
+
+}
+
+func (t *GenericTypeDecl) Clone() TypeDecl {
+	c := &GenericTypeDecl{
+		TypeDecl: t.TypeDecl.Clone(),
+		Obj:      *t.Obj.Clone(),
+	}
+
+	for _, param := range t.TypeParams {
+		c.TypeParams = append(c.TypeParams, param.Clone())
+	}
+
+	return c
+}
+
 //======
 
 // A NamedTypeDecl tupels a normal string identifier, usually something abstract like T and a concrete type. Note
@@ -264,6 +296,19 @@ func (t *NamedTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
+func (t *NamedTypeDecl) exprNode() {
+
+}
+
+func (t *NamedTypeDecl) Clone() TypeDecl {
+	return &NamedTypeDecl{
+		TypeName:  t.TypeName,
+		TypeBound: t.TypeBound,
+		TypeDecl:  t.TypeDecl.Clone(),
+		Obj:       *t.Obj.Clone(),
+	}
+}
+
 // A TypeBound is currently only used by the Java renderer and is used to declare upper or lower type bounds.
 type TypeBound string
 
@@ -322,6 +367,17 @@ func (t *SliceTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
 }
 
+func (t *SliceTypeDecl) Clone() TypeDecl {
+	return &SliceTypeDecl{
+		TypeDecl: t.TypeDecl.Clone(),
+		Obj:      *t.Obj.Clone(),
+	}
+}
+
+func (t *SliceTypeDecl) exprNode() {
+
+}
+
 // ArrayTypeDecl declares a fixed length array type of an arbitrary type. This is not expressible In Java and
 // degenerates to a normal array.
 type ArrayTypeDecl struct {
@@ -371,6 +427,18 @@ func (t *ArrayTypeDecl) String() string {
 
 func (t *ArrayTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
+}
+
+func (t *ArrayTypeDecl) exprNode() {
+
+}
+
+func (t *ArrayTypeDecl) Clone() TypeDecl {
+	return &ArrayTypeDecl{
+		ArrayLen:      t.ArrayLen,
+		ArrayTypeDecl: t.ArrayTypeDecl.Clone(),
+		Obj:           *t.Obj.Clone(),
+	}
 }
 
 //======
@@ -455,6 +523,18 @@ func (t *ChanTypeDecl) Children() []Node {
 
 func (t *ChanTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
+}
+
+func (t *ChanTypeDecl) exprNode() {
+
+}
+
+func (t *ChanTypeDecl) Clone() TypeDecl {
+	return &ChanTypeDecl{
+		ChanTypeDecl: t.ChanTypeDecl.Clone(),
+		ChanDir:      t.ChanDir,
+		Obj:          *t.Obj.Clone(),
+	}
 }
 
 //======
@@ -553,4 +633,24 @@ func (f *FuncTypeDecl) String() string {
 
 func (f *FuncTypeDecl) sealedTypeDecl() {
 	panic("sealed type")
+}
+
+func (f *FuncTypeDecl) exprNode() {
+
+}
+
+func (f *FuncTypeDecl) Clone() TypeDecl {
+	c := &FuncTypeDecl{
+		Obj: *f.Obj.Clone(),
+	}
+
+	for _, param := range f.In {
+		c.In = append(c.In, NewParam(param.ParamName, param.ParamTypeDecl.Clone()))
+	}
+
+	for _, param := range f.Out {
+		c.Out = append(c.Out, NewParam(param.ParamName, param.ParamTypeDecl.Clone()))
+	}
+
+	return c
 }
