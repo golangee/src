@@ -155,6 +155,8 @@ fmt.Println({{.Get "var"}})
 														lang.Itoa(lang.Attr("someInt")),
 													),
 													NewDeferStmt(lang.CallIdent("db", "Close")),
+													lang.Term(),
+													lang.Panic("should come here"),
 												)),
 										),
 								).

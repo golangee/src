@@ -1,6 +1,9 @@
 package lang
 
-import "github.com/golangee/src/ast"
+import (
+	"github.com/golangee/src/ast"
+	"strconv"
+)
 
 // Sel creates a reference or selector chain through all given names. So a Sel(a, b, c) results in a.b.c
 func Sel(names ...string) *ast.Macro {
@@ -56,5 +59,13 @@ func ToString(expr ast.Expr) *ast.Macro {
 func Itoa(expr ast.Expr) *ast.Macro {
 	return ast.NewMacro().SetMatchers(
 		ast.MatchTargetLanguage(ast.LangGo, CallStatic("strconv.Itoa", expr)),
+	)
+}
+
+// Panic raises a panic, does a halt or throws some kind of implementation exception indicating a serious programming
+// error.
+func Panic(msg string) *ast.Macro {
+	return ast.NewMacro().SetMatchers(
+		ast.MatchTargetLanguage(ast.LangGo, ast.NewTpl("panic("+strconv.Quote(msg)+")")),
 	)
 }
