@@ -76,10 +76,13 @@ func (t *TypeDeclPtr) Children() []Node {
 }
 
 func (t *TypeDeclPtr) Clone() TypeDecl {
-	return &TypeDeclPtr{
+	c := &TypeDeclPtr{
 		Decl: t.Clone(),
 		Obj:  *t.Obj.Clone(),
 	}
+	assertSettableParent(c.Decl).SetParent(c)
+
+	return c
 }
 
 func (t *TypeDeclPtr) exprNode() {
@@ -216,7 +219,9 @@ func (t *GenericTypeDecl) Clone() TypeDecl {
 	}
 
 	for _, param := range t.TypeParams {
-		c.TypeParams = append(c.TypeParams, param.Clone())
+		pc := param.Clone()
+		c.TypeParams = append(c.TypeParams, pc)
+		assertSettableParent(pc).SetParent(c)
 	}
 
 	return c
@@ -301,12 +306,16 @@ func (t *NamedTypeDecl) exprNode() {
 }
 
 func (t *NamedTypeDecl) Clone() TypeDecl {
-	return &NamedTypeDecl{
+	c := &NamedTypeDecl{
 		TypeName:  t.TypeName,
 		TypeBound: t.TypeBound,
 		TypeDecl:  t.TypeDecl.Clone(),
 		Obj:       *t.Obj.Clone(),
 	}
+
+	assertSettableParent(c.TypeDecl).SetParent(c)
+
+	return c
 }
 
 // A TypeBound is currently only used by the Java renderer and is used to declare upper or lower type bounds.
@@ -368,10 +377,14 @@ func (t *SliceTypeDecl) sealedTypeDecl() {
 }
 
 func (t *SliceTypeDecl) Clone() TypeDecl {
-	return &SliceTypeDecl{
+	c := &SliceTypeDecl{
 		TypeDecl: t.TypeDecl.Clone(),
 		Obj:      *t.Obj.Clone(),
 	}
+
+	assertSettableParent(c.TypeDecl).SetParent(c)
+
+	return c
 }
 
 func (t *SliceTypeDecl) exprNode() {
@@ -434,11 +447,15 @@ func (t *ArrayTypeDecl) exprNode() {
 }
 
 func (t *ArrayTypeDecl) Clone() TypeDecl {
-	return &ArrayTypeDecl{
+	c := &ArrayTypeDecl{
 		ArrayLen:      t.ArrayLen,
 		ArrayTypeDecl: t.ArrayTypeDecl.Clone(),
 		Obj:           *t.Obj.Clone(),
 	}
+
+	assertSettableParent(c.ArrayTypeDecl).SetParent(c)
+
+	return c
 }
 
 //======
@@ -530,11 +547,15 @@ func (t *ChanTypeDecl) exprNode() {
 }
 
 func (t *ChanTypeDecl) Clone() TypeDecl {
-	return &ChanTypeDecl{
+	c := &ChanTypeDecl{
 		ChanTypeDecl: t.ChanTypeDecl.Clone(),
 		ChanDir:      t.ChanDir,
 		Obj:          *t.Obj.Clone(),
 	}
+
+	assertSettableParent(c.ChanTypeDecl).SetParent(c)
+
+	return c
 }
 
 //======
@@ -645,11 +666,15 @@ func (f *FuncTypeDecl) Clone() TypeDecl {
 	}
 
 	for _, param := range f.In {
-		c.In = append(c.In, NewParam(param.ParamName, param.ParamTypeDecl.Clone()))
+		pc := param.ParamTypeDecl.Clone()
+		assertSettableParent(pc).SetParent(c)
+		c.In = append(c.In, NewParam(param.ParamName, pc))
 	}
 
 	for _, param := range f.Out {
-		c.Out = append(c.Out, NewParam(param.ParamName, param.ParamTypeDecl.Clone()))
+		pc := param.ParamTypeDecl.Clone()
+		assertSettableParent(pc).SetParent(c)
+		c.Out = append(c.Out, NewParam(param.ParamName, pc))
 	}
 
 	return c
