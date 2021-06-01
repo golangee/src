@@ -39,6 +39,7 @@ type LangVersion string
 const (
 	LangVersionJava8 LangVersion = "1.8"
 	LangVersionGo16  LangVersion = "1.16"
+	LangVersionGo17  LangVersion = "1.17"
 	LangVersionSwift LangVersion = "5.1"
 )
 
@@ -57,6 +58,9 @@ type Target struct {
 	MinLangVersion LangVersion // the (inclusive) supported minimum version of the generated code.
 	MaxLangVersion LangVersion // the (inclusive) supported maximum version of the generated code.
 	Framework      Framework   // the framework to use. Empty means only use the default standard library things.
+	Require        struct { // require directive
+		GoMod []string // go mod specific directive strings (e.g. github.com/golangee/sql v0.0.0-20210531101020-33021aed64c2)
+	}
 }
 
 func (t Target) Equals(o Target) bool {
@@ -87,6 +91,22 @@ func (n *Mod) SetLang(lang Lang) *Mod {
 // SetOutputDirectory sets the targets output directory.
 func (n *Mod) SetOutputDirectory(dir string) *Mod {
 	n.Target.Out = dir
+	return n
+}
+
+// SetLangVersion updates the Target.MinLangVersion.
+func (n *Mod) SetLangVersion(version LangVersion) *Mod {
+	n.Target.MinLangVersion = version
+	return n
+}
+
+// Require expects a language to decide how to handle the dependency.
+func (n *Mod) Require(dep string) *Mod {
+	if n.Target.Lang != LangGo {
+		panic("invalid state: Require currently only supports Go")
+	}
+
+	n.Target.Require.GoMod = append(n.Target.Require.GoMod, dep)
 	return n
 }
 

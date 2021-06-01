@@ -9,7 +9,13 @@ import (
 
 func (r *Renderer) renderMod(mod *ast.Mod, parent *render.Dir) (*render.Dir, error) {
 	modDir := r.ensurePkgDir(mod.Target.Out, parent)
-	modDir.MimeType = mimeTypeGoModule
+	modDir.MimeType = MimeTypeGoModule
+
+	modDir.Files = append(modDir.Files, &render.File{
+		FileName: PackageGoModFile,
+		MimeType: MimeTypeGoMod,
+		Buf:      []byte(createGoModFile(mod)),
+	})
 
 	var firstErr error
 
@@ -29,4 +35,23 @@ func (r *Renderer) renderMod(mod *ast.Mod, parent *render.Dir) (*render.Dir, err
 	}
 
 	return modDir, firstErr
+}
+
+func createGoModFile(mod *ast.Mod) string {
+	var tmp strings.Builder
+
+	tmp.WriteString(fmt.Sprintf("module %s\n\ngo %s\n", mod.Name, mod.Target.MinLangVersion))
+
+	if len(mod.Target.Require.GoMod) > 0 {
+		tmp.WriteString("\nrequire (\n")
+		for _, dep := range mod.Target.Require.GoMod {
+			tmp.WriteString("\t")
+			tmp.WriteString(dep)
+			tmp.WriteString("\n")
+		}
+
+		tmp.WriteString(")\n")
+	}
+
+	return tmp.String()
 }

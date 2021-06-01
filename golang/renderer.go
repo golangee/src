@@ -6,10 +6,15 @@ import (
 	"github.com/golangee/src/render"
 )
 
-const packageGoDocFile = "doc.go"
-const mimeTypeGo = "text/x-go-source"
-const mimeTypeDir = "application/x-directory"
-const mimeTypeGoModule = "application/x-directory-module"
+const (
+	PackageGoDocFile = "doc.go"
+	PackageGoModFile = "go.mod"
+
+	MimeTypeGo       = "text/x-go-source"
+	MimeTypeGoMod    = "text/x-go-source-mod"
+	MimeTypeDir      = "application/x-directory"
+	MimeTypeGoModule = "application/x-directory-module"
+)
 
 // Options for the renderer.
 type Options struct {

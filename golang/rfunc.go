@@ -126,7 +126,7 @@ func (r *Renderer) renderFuncComment(node *ast.Func) string {
 			name = fromStdlib(ast.Name(parameterNode.TypeDecl().String())).Identifier()
 		}
 
-		comment.WriteString(deEllipsis(name, parameterNode.Obj.ObjComment.Text))
+		comment.WriteString(DeEllipsis(name, parameterNode.Obj.ObjComment.Text))
 		comment.WriteString("\n")
 	}
 
@@ -141,7 +141,7 @@ func (r *Renderer) renderFuncComment(node *ast.Func) string {
 			name = fromStdlib(ast.Name(parameterNode.TypeDecl().String())).Identifier()
 		}
 
-		comment.WriteString(deEllipsis(name, parameterNode.ObjComment.Text))
+		comment.WriteString(DeEllipsis(name, parameterNode.ObjComment.Text))
 		comment.WriteString("\n")
 	}
 

@@ -26,8 +26,8 @@ func (r *Renderer) renderPkg(pkg *ast.Pkg) ([]*render.File, error) {
 		tmp.Printf("package %s\n", pkg.Name)
 
 		f := &render.File{
-			FileName: packageGoDocFile,
-			MimeType: mimeTypeGo,
+			FileName: PackageGoDocFile,
+			MimeType: MimeTypeGo,
 			Buf:      tmp.Bytes(),
 		}
 
@@ -39,7 +39,7 @@ func (r *Renderer) renderPkg(pkg *ast.Pkg) ([]*render.File, error) {
 
 		f := &render.File{
 			FileName: file.Name,
-			MimeType: mimeTypeGo,
+			MimeType: MimeTypeGo,
 		}
 		f.Buf = buf
 		f.Error = err
@@ -61,7 +61,7 @@ func (r *Renderer) ensurePkgDir(restPath string, parent *render.Dir) *render.Dir
 
 	dir := parent.Directory(names[0])
 	if dir == nil {
-		dir = &render.Dir{DirName: names[0], MimeType: mimeTypeDir}
+		dir = &render.Dir{DirName: names[0], MimeType: MimeTypeDir}
 		parent.Dirs = append(parent.Dirs, dir)
 	}
 

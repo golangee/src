@@ -33,7 +33,8 @@ func formatComment(ellipsisName, doc string) string {
 	return ""
 }
 
-func deEllipsis(ellipsisName, doc string) string {
+// DeEllipsis replaces a ... with the according text.
+func DeEllipsis(ellipsisName, doc string) string {
 	tmp := &strings.Builder{}
 	if strings.HasPrefix(doc, "...") {
 		tmp.WriteString(ellipsisName)

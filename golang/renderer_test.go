@@ -30,6 +30,8 @@ func newProject() *Prj {
 			NewMod("github.com/myproject/mymodule").
 				SetLang(LangGo).
 				SetOutputDirectory("my/cool/module").
+				SetLangVersion(LangVersionGo16).
+				Require("github.com/golangee/sql v0.0.0-20210531101020-33021aed64c2").
 				AddPackages(
 					NewPkg("github.com/myproject/mymodule/cmd/myapp").
 						SetName("main").
