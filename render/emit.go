@@ -18,7 +18,7 @@ func Write(dir string, artifact Artifact) error {
 		}
 	case *Dir:
 		dst := filepath.Join(dir, t.DirName)
-		if err := os.MkdirAll(dst, 0600); err != nil {
+		if err := os.MkdirAll(dst, 0700); err != nil {
 			return fmt.Errorf("unable to create directory: %s: %w", dst, err)
 		}
 
