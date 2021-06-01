@@ -29,6 +29,7 @@ func newProject() *Prj {
 		AddModules(
 			NewMod("github.com/myproject/mymodule").
 				SetLang(LangGo).
+				SetOutputDirectory("my/cool/module").
 				AddPackages(
 					NewPkg("github.com/myproject/mymodule/cmd/myapp").
 						SetName("main").

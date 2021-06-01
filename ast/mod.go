@@ -50,6 +50,7 @@ const (
 )
 
 type Target struct {
+	Out            string      // the output directory
 	Arch           Arch        // probably empty and of limited use.
 	Os             OS          // probably empty and of limited use.
 	Lang           Lang        // target generator language.
@@ -80,6 +81,12 @@ func NewMod(name string) *Mod {
 // SetLang updates the Target.Lang
 func (n *Mod) SetLang(lang Lang) *Mod {
 	n.Target.Lang = lang
+	return n
+}
+
+// SetOutputDirectory sets the targets output directory.
+func (n *Mod) SetOutputDirectory(dir string) *Mod {
+	n.Target.Out = dir
 	return n
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 func (r *Renderer) renderMod(mod *ast.Mod, parent *render.Dir) (*render.Dir, error) {
-	modDir := r.ensurePkgDir(mod.Name, parent)
+	modDir := r.ensurePkgDir(mod.Target.Out, parent)
 	modDir.MimeType = mimeTypeGoModule
 
 	var firstErr error
@@ -18,7 +18,8 @@ func (r *Renderer) renderMod(mod *ast.Mod, parent *render.Dir) (*render.Dir, err
 		if !strings.HasPrefix(pkg.Path, mod.Name+"/") {
 			return nil, fmt.Errorf("declared package '%s' must be prefixed by module path '%s'", pkg.Path, mod.Name)
 		}
-		pkgDir := r.ensurePkgDir(pkg.Path, parent)
+
+		pkgDir := r.ensurePkgDir(pkg.Path[len(mod.Name)+1:], modDir)
 		files, err := r.renderPkg(pkg)
 		if firstErr == nil && err != nil {
 			firstErr = fmt.Errorf("cannot render package '%s': %w", pkg.Path, err)
