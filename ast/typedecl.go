@@ -464,11 +464,6 @@ func (t *ArrayTypeDecl) Clone() TypeDecl {
 // for Java the java.util.Map type.
 func NewMapDecl(key, val TypeDecl) *GenericTypeDecl {
 	t := NewGenericDecl(NewSimpleTypeDecl(stdlib.Map), key, val)
-	assertNotAttached(key)
-	assertSettableParent(key).SetParent(t)
-
-	assertNotAttached(val)
-	assertSettableParent(val).SetParent(t)
 
 	return t
 }

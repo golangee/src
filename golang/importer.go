@@ -20,13 +20,15 @@ func nextImporterKey() importerKey {
 
 // importer manages the rendered import section at the files top.
 type importer struct {
-	namedImports map[string]string // named import => qualifier
+	selfImportPath string
+	namedImports   map[string]string // named import => qualifier
 }
 
 // newImporter allocates an according instance.
-func newImporter() *importer {
+func newImporter(selfImportPath string) *importer {
 	return &importer{
-		namedImports: map[string]string{},
+		selfImportPath: selfImportPath,
+		namedImports:   map[string]string{},
 	}
 }
 
@@ -36,7 +38,7 @@ func installImporter(r *Renderer) error {
 	return ast.ForEachMod(r.root, func(mod *ast.Mod) error {
 		for _, pkg := range mod.Pkgs {
 			for _, file := range pkg.PkgFiles {
-				file.PutValue(r.importerId, newImporter())
+				file.PutValue(r.importerId, newImporter(pkg.Path))
 			}
 		}
 
@@ -97,6 +99,10 @@ func (p *importer) shortify(name ast.Name) ast.Name {
 	id := name.Identifier()
 	if id == "" || qual == "" {
 		return name
+	}
+
+	if qual == p.selfImportPath {
+		return ast.Name(id)
 	}
 
 	namedImportIdxName := strings.LastIndex(qual, "/") // e.g. 3 for net/http or -1 for net
