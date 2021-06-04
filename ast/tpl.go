@@ -11,7 +11,7 @@ package ast
 // the importer etc. See also TplContext.
 type Tpl struct {
 	Template string
-	Values   map[string]string
+	Values   map[string]interface{}
 	Obj
 }
 
@@ -20,9 +20,9 @@ func NewTpl(tpl string) *Tpl {
 }
 
 // Put inserts a key-value pair which can be accessed later by TplContext.
-func (n *Tpl) Put(key, val string) *Tpl {
+func (n *Tpl) Put(key string, val interface{}) *Tpl {
 	if n.Values == nil {
-		n.Values = map[string]string{}
+		n.Values = map[string]interface{}{}
 	}
 
 	n.Values[key] = val
@@ -47,6 +47,6 @@ type TplContext interface {
 	// Self returns the Tpl reference.
 	Self() *Tpl
 
-	// Get returns the uninterpreted string value of Tpl.Values or the empty string if undefined.
-	Get(key string) string
+	// Get returns the uninterpreted value of Tpl.Values or nil if undefined.
+	Get(key string) interface{}
 }

@@ -39,7 +39,7 @@ type tplRenderContext struct {
 	tpl      *ast.Tpl
 }
 
-func (t *tplRenderContext) Get(key string) string {
+func (t *tplRenderContext) Get(key string) interface{} {
 	return t.tpl.Values[key]
 }
 
