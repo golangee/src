@@ -24,8 +24,13 @@ func (r *Renderer) renderMod(mod *ast.Mod, parent *render.Dir) (*render.Dir, err
 		if !strings.HasPrefix(pkg.Path, mod.Name) {
 			return nil, fmt.Errorf("declared package '%s' must be prefixed by module path '%s'", pkg.Path, mod.Name)
 		}
+		var pkgDir *render.Dir
+		if pkg.Path == mod.Name {
+			pkgDir = modDir
+		} else {
+			pkgDir = r.ensurePkgDir(pkg.Path[len(mod.Name)+1:], modDir)
+		}
 
-		pkgDir := r.ensurePkgDir(pkg.Path[len(mod.Name)+1:], modDir)
 		files, err := r.renderPkg(pkg)
 		if firstErr == nil && err != nil {
 			firstErr = fmt.Errorf("cannot render package '%s': %w", pkg.Path, err)
