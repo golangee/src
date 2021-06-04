@@ -22,6 +22,9 @@ type Pkg struct {
 	//  * Java: first comment In a file named package-info.java
 	Preamble *Comment
 
+	// RawFiles contains uninterpreted arbitrary files. May be anything.
+	RawFiles []*RawFile
+
 	Obj
 }
 
@@ -67,7 +70,7 @@ func (n *Pkg) SetName(name string) *Pkg {
 	return n
 }
 
-// Files appends the given files.
+// AddFiles appends the given files.
 func (n *Pkg) AddFiles(files ...*File) *Pkg {
 	for _, file := range files {
 		assertNotAttached(file)
@@ -78,9 +81,20 @@ func (n *Pkg) AddFiles(files ...*File) *Pkg {
 	return n
 }
 
+// AddRawFiles appends the given files.
+func (n *Pkg) AddRawFiles(files ...*RawFile) *Pkg {
+	for _, file := range files {
+		assertNotAttached(file)
+		n.RawFiles = append(n.RawFiles, file)
+		file.ObjParent = n
+	}
+
+	return n
+}
+
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 func (n *Pkg) Children() []Node {
-	tmp := make([]Node, 0, len(n.PkgFiles)+1)
+	tmp := make([]Node, 0, len(n.PkgFiles)+len(n.RawFiles)+1)
 
 	if n.ObjComment != nil {
 		tmp = append(tmp, n.Obj.ObjComment)
@@ -88,6 +102,10 @@ func (n *Pkg) Children() []Node {
 
 	for _, pkg := range n.PkgFiles {
 		tmp = append(tmp, pkg)
+	}
+
+	for _, file := range n.RawFiles {
+		tmp = append(tmp, file)
 	}
 
 	return tmp

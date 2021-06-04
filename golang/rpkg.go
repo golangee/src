@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"fmt"
 	"github.com/golangee/src/ast"
 	"github.com/golangee/src/render"
 	"strings"
@@ -51,6 +52,19 @@ func (r *Renderer) renderPkg(pkg *ast.Pkg) ([]*render.File, error) {
 		res = append(res, f)
 	}
 
+	for _, file := range pkg.RawFiles {
+		buf, err := file.Data(file)
+		if err != nil {
+			return nil, fmt.Errorf("cannot render raw file: %w", err)
+		}
+
+		res = append(res, &render.File{
+			FileName: file.Name,
+			MimeType: file.MimeType,
+			Buf:      buf,
+		})
+	}
+
 	return res, firstErr
 }
 
@@ -71,5 +85,3 @@ func (r *Renderer) ensurePkgDir(restPath string, parent *render.Dir) *render.Dir
 
 	return r.ensurePkgDir(strings.Join(names[1:], "/"), dir)
 }
-
-

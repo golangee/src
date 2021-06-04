@@ -196,7 +196,16 @@ fmt.Println({{.Get "var"}})
 									),
 								),
 
-						),
+						).AddRawFiles(
+						NewRawTpl("makefile", "text/x-makefile", NewTpl(
+							`lint:
+	@command -v golangci-lint
+.PHONY: lint
+
+VERSION = '{{.Get "check"}}'
+`,
+						).Put("check", "1.2.3")),
+					),
 				),
 
 		)
