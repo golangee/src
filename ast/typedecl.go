@@ -77,7 +77,7 @@ func (t *TypeDeclPtr) Children() []Node {
 
 func (t *TypeDeclPtr) Clone() TypeDecl {
 	c := &TypeDeclPtr{
-		Decl: t.Clone(),
+		Decl: t.Decl.Clone(),
 		Obj:  *t.Obj.Clone(),
 	}
 	assertSettableParent(c.Decl).SetParent(c)
