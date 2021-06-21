@@ -18,7 +18,7 @@ type Struct struct {
 	Types           []NamedType // only valid for language which can declare named nested type like java
 	Implements      []Name      // Implements denotes a bunch of interfaces which must be implemented by this struct. Depending on the renderer (like Go) this has no effect.
 	Embedded        []TypeDecl  // Embedded is only valid for languages which supports composition at a language level
-	FactoryRefs     []Func      // FactoryRefs are NOT considered children of a struct. They are still connected to a file, however they are considered to be a kind of constructor.
+	FactoryRefs     []*Func     // FactoryRefs are NOT considered children of a struct. They are still connected to a file, however they are considered to be a kind of constructor.
 	DefaultRecName  string      // useful to transport a standard receiver name. However, you need to care yourself.
 	Obj
 }
@@ -30,7 +30,7 @@ func NewStruct(name string) *Struct {
 	return &Struct{TypeName: name}
 }
 
-func (s *Struct) AddEmbedded(t...TypeDecl) *Struct {
+func (s *Struct) AddEmbedded(t ...TypeDecl) *Struct {
 	for _, decl := range t {
 		assertNotAttached(decl)
 		assertSettableParent(decl).SetParent(s)
@@ -96,7 +96,7 @@ func (s *Struct) AddFields(fields ...*Field) *Struct {
 
 // AddFactoryRefs just appends the given funcs for the purpose of factories or constructors. Most importantly
 // Struct does not take the ownership and the parent is still unset (usually a file or another type).
-func (s *Struct) AddFactoryRefs(f ...Func) *Struct {
+func (s *Struct) AddFactoryRefs(f ...*Func) *Struct {
 	s.FactoryRefs = append(s.FactoryRefs, f...)
 
 	return s

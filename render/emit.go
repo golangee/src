@@ -105,7 +105,7 @@ func fileHasMagic(fname string, magic ...[]byte) (bool, error) {
 		if errors.Is(err, io.EOF) {
 			return false, nil
 		}
-		
+
 		return false, fmt.Errorf("unable to read buffer: %w", err)
 	}
 
