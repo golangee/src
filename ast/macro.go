@@ -4,15 +4,26 @@ package ast
 // to emit generator specific nodes at calling time based on the current ast state (especially its parents).
 type Macro struct {
 	Func func(m *Macro) []Node // Func should always return a new defensive copy with shared Node instances.
+	// if true, the result of Func is ever evaluated once. This improves performance but also makes stateful macros
+	// easier to implement when called multiple times. However, when rendering for multiple platforms, this may
+	// cause wrong results. See also Invalidate.
+	CacheFunc bool
+	funcCache []Node
 	Obj
 }
 
 func NewMacro() *Macro {
-	return &Macro{}
+	return &Macro{CacheFunc: true}
 }
 
 func (n *Macro) exprNode() {
 
+}
+
+// Invalidate purges any node cache.
+func (n *Macro) Invalidate() *Macro {
+	n.funcCache = nil
+	return n
 }
 
 // Target returns the available module target information. If there is no target available, all fields are default.
@@ -31,7 +42,17 @@ func (n *Macro) Children() []Node {
 		return nil
 	}
 
-	return n.Func(n)
+	if !n.CacheFunc {
+		return n.Func(n)
+	}
+
+	if n.funcCache != nil {
+		return n.funcCache
+	}
+
+	n.funcCache = n.Func(n)
+
+	return n.funcCache
 }
 
 // SetMatchers is a builder function which replaces the Func with a loop implementation which invokes each given
