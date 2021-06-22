@@ -10,7 +10,7 @@ import (
 func (r *Renderer) renderMacro(node *ast.Macro, w *render.BufferedWriter) error {
 	r.writeCommentNode(w, false, "", node.Comment())
 	if node.Func != nil {
-		actualNodes := node.Func(node)
+		actualNodes := node.Children()
 		for _, actualNode := range actualNodes {
 			if err := r.renderNode(actualNode, w); err != nil {
 				return fmt.Errorf("unable to render dynamic macro node: %w", err)
