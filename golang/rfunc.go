@@ -111,7 +111,7 @@ func (r *Renderer) renderFuncComment(node *ast.Func) string {
 		}
 	}
 
-	if hasParamComments {
+	if hasParamComments || len(node.ErrorHintRefs) > 0 {
 		comment.WriteString("\n\n")
 	}
 
@@ -142,6 +142,16 @@ func (r *Renderer) renderFuncComment(node *ast.Func) string {
 		}
 
 		comment.WriteString(DeEllipsis(name, parameterNode.ObjComment.Text))
+		comment.WriteString("\n")
+	}
+
+	for _, ref := range node.ErrorHintRefs {
+		details := strings.TrimSpace(DeEllipsis("", ref.CommentText()))
+		if details != "" {
+			comment.WriteString("Returns error '" + ref.TypeName + "' when " + details)
+		} else {
+			comment.WriteString("Returns error '" + ref.TypeName + "'.")
+		}
 		comment.WriteString("\n")
 	}
 

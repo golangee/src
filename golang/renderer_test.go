@@ -169,6 +169,9 @@ fmt.Println({{.Get "var"}})
 									NewFunc("globalFunc").
 										SetComment("...is a package private function.").
 										SetVisibility(PackagePrivate).
+										AddErrorCaseRefs(
+											NewErrorCase("NotFound").SetComment("...is another not-foundable error type."),
+										).
 										SetBody(NewBlock()),
 								).
 								AddNodes(
