@@ -17,10 +17,20 @@ func (n *Enum) sealedNamedType() {
 	panic("implement me")
 }
 
+// Children returns a defensive copy of the underlying slice. However the Node references are shared.
+func (n *Enum) Children() []Node {
+	tmp := make([]Node, 0, len(n.Cases))
+	for _, enumCase := range n.Cases {
+		tmp = append(tmp, enumCase)
+	}
+
+	return tmp
+}
+
 // An EnumCase declares a unique case of the enumeration.
 type EnumCase struct {
-	TypeName string
-	Value    *BasicLit
+	TypeName  string
+	EnumValue *BasicLit
 	Obj
 }
 

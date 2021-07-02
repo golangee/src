@@ -196,6 +196,20 @@ fmt.Println({{.Get "var"}})
 											SetComment("...is another var."),
 										NewParam("v4", NewSliceTypeDecl(NewSimpleTypeDecl(stdlib.String))),
 									),
+
+									NewError("TicketError").
+										SetComment("...is the sum type of all domain errors.").
+										AddErrorCases(
+											NewErrorCase("NotFound").
+												SetComment("...describes that a domain entity has not been found where one has been expected."),
+											NewErrorCase("AlreadyDeclared").
+												SetComment("...describes a situation where a domain entity has been found but that was unexpected.").
+												AddProperties(
+													NewProperty("id", NewSimpleTypeDecl(stdlib.UUID)).
+														SetComment("...is the affected id.").
+														Reader(true, Public),
+												),
+										),
 								),
 
 						).AddRawFiles(

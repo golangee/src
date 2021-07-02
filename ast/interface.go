@@ -14,7 +14,7 @@ type Interface struct {
 	Obj
 }
 
-// NewStruct returns a new named struct type. A struct is always mutable, but may be used either in a value
+// NewInterface returns a new named struct type. A struct is always mutable, but may be used either in a value
 // or pointer context. Structs are straightforward in Go but in Java just a PoJo. We do not use records, because
 // they have a different semantic (read only).
 func NewInterface(name string) *Interface {
@@ -28,7 +28,7 @@ func (s *Interface) SetComment(text string) *Interface {
 	return s
 }
 
-// Name returns the declared identifier which must be unique per package.
+// Identifier returns the declared identifier which must be unique per package.
 func (s *Interface) Identifier() string {
 	return s.TypeName
 }

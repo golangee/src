@@ -13,6 +13,7 @@ type Func struct {
 	FunBody         *Block
 	FunVariadic     bool
 	FunAnnotations  []*Annotation
+	ErrorHintRefs   []*ErrorCase //optional reference (not owned) to documented error cases.
 	Obj
 }
 
@@ -25,6 +26,12 @@ func NewFunc(name string) *Func {
 func (s *Func) SetComment(text string) *Func {
 	s.ObjComment = NewComment(text)
 	s.ObjComment.SetParent(s)
+	return s
+}
+
+// AddErrorCaseRefs refers to ErrorCases without taking ownership.
+func (s *Func) AddErrorCaseRefs(cases ...*ErrorCase) *Func {
+	s.ErrorHintRefs = append(s.ErrorHintRefs, cases...)
 	return s
 }
 

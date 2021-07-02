@@ -113,6 +113,10 @@ func (r *Renderer) renderNode(node ast.Node, w *render.BufferedWriter) error {
 		if err := r.renderTpl(n, w); err != nil {
 			return fmt.Errorf("cannot render template node: %w", err)
 		}
+	case *ast.Error:
+		if err := r.renderError(n, w); err != nil {
+			return fmt.Errorf("cannot render error node: %w", err)
+		}
 	default:
 		panic("unsupported type: " + reflect.TypeOf(n).String())
 	}
