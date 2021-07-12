@@ -14,17 +14,18 @@ import (
 func (r *Renderer) renderError(node *ast.Error, w *render.BufferedWriter) error {
 	importer := r.importer(node)
 
+	// TODO actually emitting this interface is pointless and verbose in Go, however it describes the architectural intention clearly.
 	r.writeCommentNode(w, false, node.Identifier(), node.Comment())
 	if err := validate.ExportedIdentifier(node.Visibility(), node.Identifier()); err != nil {
 		return err
 	}
 
 	sumTypeMarkerFunc := MakePublic(node.GroupName)
-	const markerDoc = "...is the according marker function. This is a no-op."
+	const markerDoc = "...is the according marker function."
 
 	w.Printf("type %s interface {\n", node.GroupName)
 	r.writeComment(w, false, sumTypeMarkerFunc, markerDoc)
-	w.Printf("  %s()\n", sumTypeMarkerFunc)
+	w.Printf("  %s() bool\n", sumTypeMarkerFunc)
 	w.Printf("  error")
 	w.Printf("}\n")
 
@@ -38,7 +39,7 @@ func (r *Renderer) renderError(node *ast.Error, w *render.BufferedWriter) error 
 
 		fName := MakePublic(eCase.TypeName)
 		r.writeComment(w, false, fName, markerDoc)
-		w.Printf("  %s()\n", fName)
+		w.Printf("  %s() bool\n", fName)
 		for _, property := range eCase.Properties {
 			if property.Read.Enabled {
 				fName := MakePublic(property.FieldName)
@@ -83,16 +84,16 @@ func (r *Renderer) renderError(node *ast.Error, w *render.BufferedWriter) error 
 
 		// render marker interface
 		r.writeComment(w, false, sumTypeMarkerFunc, markerDoc)
-		w.Printf("func (%s *%s) %s() {}\n", recName, tName, sumTypeMarkerFunc)
+		w.Printf("func (%s *%s) %s() bool{\nreturn true\n}\n", recName, tName, sumTypeMarkerFunc)
 		r.writeComment(w, false, caseTypeMarkerFunc, markerDoc)
-		w.Printf("func (%s *%s) %s() {}\n", recName, tName, caseTypeMarkerFunc)
+		w.Printf("func (%s *%s) %s() bool{\nreturn true\n}\n\n", recName, tName, caseTypeMarkerFunc)
 		r.writeComment(w, false, "Unwrap", "...unpacks the cause or returns nil.")
 		w.Printf("func (%s *%s) Unwrap() error {\nreturn %s.cause\n}\n", recName, tName, recName)
 
 		// render error func
 		r.writeComment(w, false, "Error", "...conforms to the error behavior.")
 		w.Printf("func (%s *%s) Error() string {\n", recName, tName)
-		w.Printf("  %s(", importer.shortify("fmt.Errorf"))
+		w.Printf(" return %s(", importer.shortify("fmt.Sprintf"))
 		w.Printf(`"`)
 		w.Printf(eCase.TypeName)
 		for _, property := range eCase.Properties {

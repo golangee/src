@@ -5,6 +5,8 @@ package ast
 //   create private structs each implementing the error interface and methods named after GroupName and each ErrorCase.
 // Java:
 //   model as sealed class or (checked) exception?
+//
+// TODO I don't know what is better: concrete types like this or a macro?
 type Error struct {
 	GroupName       string // GroupName denotes the actual name of the sealed type set of errors.
 	ErrorVisibility Visibility
