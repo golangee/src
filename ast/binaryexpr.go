@@ -32,6 +32,8 @@ const (
 	OpNotEqual     Operator = Operator(token.NEQ)
 	OpLessEqual    Operator = Operator(token.LEQ)
 	OpGreaterEqual Operator = Operator(token.GEQ)
+
+	OpColon Operator = Operator(token.COLON)
 )
 
 // A BinaryExpr is something like a + b. It is not a StarExpr and not an Assign.

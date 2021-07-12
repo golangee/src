@@ -56,6 +56,8 @@ func (r *Renderer) renderBinaryExpr(node *ast.BinaryExpr, w *render.BufferedWrit
 		w.Print("<=")
 	case ast.OpGreaterEqual:
 		w.Print(">=")
+	case ast.OpColon:
+		w.Print(":")
 	default:
 		panic("operator not supported: " + fmt.Sprint(node.Op))
 	}

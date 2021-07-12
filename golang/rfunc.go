@@ -146,11 +146,11 @@ func (r *Renderer) renderFuncComment(node *ast.Func) string {
 	}
 
 	for _, ref := range node.ErrorHintRefs {
-		details := strings.TrimSpace(DeEllipsis("", ref.CommentText()))
+		details := strings.TrimSpace(DeEllipsis("", ref.GetComment()))
 		if details != "" {
-			comment.WriteString("Returns error '" + ref.TypeName + "' when " + details)
+			comment.WriteString("Returns error '" + ref.Name() + "' when " + details)
 		} else {
-			comment.WriteString("Returns error '" + ref.TypeName + "'.")
+			comment.WriteString("Returns error '" + ref.Name() + "'.")
 		}
 		comment.WriteString("\n")
 	}

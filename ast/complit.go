@@ -16,9 +16,16 @@ func NewCompLit(typ Expr, elems ...Expr) *CompLit {
 	assertNotAttached(typ)
 	assertSettableParent(typ).SetParent(n)
 
+	n.AddElements(elems...)
+
+	return n
+}
+
+func (n *CompLit) AddElements(elems ...Expr) *CompLit {
 	for _, elem := range elems {
 		assertNotAttached(elem)
 		assertSettableParent(elem).SetParent(n)
+		n.Elements = append(n.Elements, elem)
 	}
 
 	return n

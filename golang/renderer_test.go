@@ -1,8 +1,9 @@
-package golang
+package golang_test
 
 import (
 	"fmt"
 	. "github.com/golangee/src/ast"
+	"github.com/golangee/src/golang"
 	"github.com/golangee/src/stdlib"
 	fmt2 "github.com/golangee/src/stdlib/fmt"
 	"github.com/golangee/src/stdlib/lang"
@@ -12,7 +13,7 @@ import (
 
 func TestRenderer_Render(t *testing.T) {
 	prj := newProject()
-	renderer := NewRenderer(Options{})
+	renderer := golang.NewRenderer(golang.Options{})
 	artifact, err := renderer.Render(prj)
 	if err != nil {
 		fmt.Println(artifact)
@@ -20,6 +21,42 @@ func TestRenderer_Render(t *testing.T) {
 	}
 
 	fmt.Println(artifact)
+}
+
+func testError() *File {
+	errorFile := NewFile("errors.go")
+	// some error macro stuff
+	myErr := lang.NewError("TicketError").
+		SetComment("...is the sum type of all domain errors.")
+
+	notFound := lang.NewErrorCase("NotFoundError").
+		SetComment("...describes that a domain entity has not been found where one has been expected.")
+	myErr.AddCase(notFound)
+
+	alreadyDeclared := lang.NewErrorCase("AlreadyDeclaredError").
+		SetComment("...describes a situation where a domain entity has been found but that was unexpected.").
+		AddProperty("id", NewSimpleTypeDecl(stdlib.UUID), "...is the affected id.").
+		AddProperty("status", NewSimpleTypeDecl(stdlib.Int), "...is some secret status code.")
+	myErr.AddCase(alreadyDeclared)
+
+	errorFile.AddNodes(myErr.TypeDecl())
+
+	errorFile.AddNodes(
+		NewFunc("TestError").
+			AddResults(
+				NewParam("", NewSimpleTypeDecl("error")),
+			).SetBody(
+			NewBlock(
+				alreadyDeclared.Check(lang.CheckExactBehavior, "err", "matchedErr", NewBlock()),
+				alreadyDeclared.Check(lang.CheckSumBehavior, "err", "matchedErr2", NewBlock()),
+				alreadyDeclared.Check(lang.CheckCaseBehavior, "err", "matchedErr3", NewBlock()),
+				NewReturnStmt(notFound.Make()),
+				NewReturnStmt(alreadyDeclared.Make(NewIdent("nil"), NewIdentLit("42"))),
+			),
+		),
+	)
+
+	return errorFile
 }
 
 func newProject() *Prj {
@@ -170,7 +207,7 @@ fmt.Println({{.Get "var"}})
 										SetComment("...is a package private function.").
 										SetVisibility(PackagePrivate).
 										AddErrorCaseRefs(
-											NewErrorCase("NotFound").SetComment("...is another not-foundable error type."),
+											lang.NewErrorCase("NotFound").SetComment("...is another not-foundable error type."),
 										).
 										SetBody(NewBlock()),
 								).
@@ -200,21 +237,9 @@ fmt.Println({{.Get "var"}})
 										NewParam("v4", NewSliceTypeDecl(NewSimpleTypeDecl(stdlib.String))),
 									),
 
-									NewError("TicketError").
-										SetComment("...is the sum type of all domain errors.").
-										AddErrorCases(
-											NewErrorCase("NotFound").
-												SetComment("...describes that a domain entity has not been found where one has been expected."),
-											NewErrorCase("AlreadyDeclared").
-												SetComment("...describes a situation where a domain entity has been found but that was unexpected.").
-												AddProperties(
-													NewProperty("id", NewSimpleTypeDecl(stdlib.UUID)).
-														SetComment("...is the affected id.").
-														Reader(true, Public),
-												),
-										),
-								),
 
+								),
+							testError(),
 						).AddRawFiles(
 						NewRawTpl("makefile", "text/x-makefile", NewTpl(
 							`lint:

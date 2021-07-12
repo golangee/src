@@ -1,5 +1,10 @@
 package ast
 
+type ErrorRef interface {
+	GetComment() string
+	Name() string
+}
+
 // A Func is a function or method, depending on the context it appears. E.g. within an interface, the receiver name
 // and the body is not evaluated.
 type Func struct {
@@ -13,7 +18,7 @@ type Func struct {
 	FunBody         *Block
 	FunVariadic     bool
 	FunAnnotations  []*Annotation
-	ErrorHintRefs   []*ErrorCase //optional reference (not owned) to documented error cases.
+	ErrorHintRefs   []ErrorRef //optional reference (not owned) to documented error cases.
 	Obj
 }
 
@@ -30,7 +35,7 @@ func (s *Func) SetComment(text string) *Func {
 }
 
 // AddErrorCaseRefs refers to ErrorCases without taking ownership.
-func (s *Func) AddErrorCaseRefs(cases ...*ErrorCase) *Func {
+func (s *Func) AddErrorCaseRefs(cases ...ErrorRef) *Func {
 	s.ErrorHintRefs = append(s.ErrorHintRefs, cases...)
 	return s
 }

@@ -5,6 +5,7 @@ package ast
 //
 // Go
 //  renders as a private field with public getter.
+// TODO is this actually required?
 type Property struct {
 	FieldName string
 	FieldType TypeDecl
