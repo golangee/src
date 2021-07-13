@@ -26,10 +26,10 @@ func TestRenderer_Render(t *testing.T) {
 func testError() *File {
 	errorFile := NewFile("errors.go")
 	// some error macro stuff
-	myErr := lang.NewError("TicketError").
+	myErr := lang.NewError("Ticket").
 		SetComment("...is the sum type of all domain errors.")
 
-	notFound := lang.NewErrorCase("NotFoundError").
+	notFound := lang.NewErrorCase("NotFound").
 		SetComment("...describes that a domain entity has not been found where one has been expected.")
 	myErr.AddCase(notFound)
 

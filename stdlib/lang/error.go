@@ -15,6 +15,8 @@ import (
 //   also https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully and
 //   https://dave.cheney.net/2014/12/24/inspecting-errors.
 //   Creates private structs each implementing the error interface and methods named after GroupName and each ErrorCase.
+//
+//   In https://blog.golang.org/error-handling-and-go can also be seen, that the "Is" prefix is omitted (just as a "Get" prefix).
 // Java:
 //   model as sealed class or (checked) exception?
 //
@@ -119,6 +121,34 @@ func (n *Error) TypeDecl() *ast.Macro {
 							),
 					)
 
+					// always provide an error method
+					errRetFmt := `return "` + errorCase.Name() + `"`
+					if len(errorCase.Properties) > 0 {
+						errRetFmt = `return {{.Use "fmt.Sprintf"}}("` + errorCase.Name() + `: `
+						args := ""
+						for i, property := range errorCase.Properties {
+							errRetFmt += property.name + "=%v"
+							args += "e." + property.goFieldName()
+							if i < len(errorCase.Properties)-1 {
+								errRetFmt += ", "
+								args += ", "
+							}
+						}
+						errRetFmt += "\", " + args + ")"
+					}
+
+					typ.AddMethods(
+						ast.NewFunc("Error").
+							SetComment("...returns the conventional description of this error.").
+							SetRecName("e").
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("string"))).
+							SetBody(
+								ast.NewBlock(
+									ast.NewTpl(errRetFmt),
+								),
+							),
+					)
+
 					res = append(res, typ)
 				}
 
@@ -212,11 +242,28 @@ func (n *ErrorCase) Check(checkKind ErrorCheckKind, checkVarName, dstVarName str
 					panic("invalid check kind: " + string(checkKind))
 				}
 
+				conditionalType := ""
+				for i, fun := range iface.Methods() {
+					if len(fun.FunResults) == 1 {
+						if sb, ok := fun.FunResults[0].ParamTypeDecl.(*ast.SimpleTypeDecl); ok {
+							if sb.Name() == "bool" {
+								conditionalType += ` & {{.Get "dst"}}.` + fun.FunName + "()"
+							}
+						}
+					}
+
+					// this is a side effect: in CheckExactBehavior we have at least 2 methods, the first two are always the marker methods,
+					// CheckSumBehavior or CheckCaseBehavior have at most 1.
+					if i >= 2 {
+						break
+					}
+				}
+
 				return []ast.Node{
 					ast.NewTpl(`var {{.Get "dst"}}`).Put("dst", dstVarName),
 					iface,
 					ast.NewTpl(`
-						 if {{.Use "errors.As"}}({{.Get "src"}}, &{{.Get "dst"}})`,
+						 if {{.Use "errors.As"}}({{.Get "src"}}, &{{.Get "dst"}})`+conditionalType,
 					).Put("dst", dstVarName).Put("src", checkVarName),
 					match,
 				}
