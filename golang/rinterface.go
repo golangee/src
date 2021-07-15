@@ -11,14 +11,14 @@ import (
 func (r *Renderer) renderInterface(node *ast.Interface, w *render.BufferedWriter) error {
 	r.writeCommentNode(w, false, node.Identifier(), node.Comment())
 
-	if _, ok := node.Parent().(*ast.File); ok {
+	if node.TypeName == "" {
+		w.Printf(" %s interface {\n", node.Identifier())
+	} else {
 		if err := validate.ExportedIdentifier(node.Visibility(), node.Identifier()); err != nil {
 			return err
 		}
 
 		w.Printf(" type %s interface {\n", node.Identifier())
-	} else {
-		w.Printf(" %s interface {\n", node.Identifier())
 	}
 
 	/*
@@ -39,7 +39,7 @@ func (r *Renderer) renderInterface(node *ast.Interface, w *render.BufferedWriter
 		}
 
 		// I like a new line after a func but be more compact without comment
-		if funComment != ""{
+		if funComment != "" {
 			w.Printf("\n")
 		}
 	}

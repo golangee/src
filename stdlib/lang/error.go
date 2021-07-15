@@ -17,6 +17,7 @@ import (
 //   Creates private structs each implementing the error interface and methods named after GroupName and each ErrorCase.
 //
 //   In https://blog.golang.org/error-handling-and-go can also be seen, that the "Is" prefix is omitted (just as a "Get" prefix).
+//   Even verbose (and perhaps unidiomatic) we generate interface types for each error case. We do this only for documentation and reference purpose.
 // Java:
 //   model as sealed class or (checked) exception?
 //
@@ -63,8 +64,11 @@ func (n *Error) TypeDecl() *ast.Macro {
 				var res []ast.Node
 
 				for _, errorCase := range n.Cases {
+					contract := ast.NewInterface(golang.MakePublic(errorCase.goStructTypeName())).
+						SetComment(errorCase.Comment)
+
 					typ := ast.NewStruct(errorCase.goStructTypeName()).
-						SetComment(errorCase.Comment + "\n" + errorCase.goStructTypeName() + " is also " + grammarAOrAn(n.GroupName) + ".").
+						SetComment(errorCase.Comment + "\n" + errorCase.goStructTypeName() + " is also " + grammarAOrAn(n.GroupName) + "Error.").
 						SetVisibility(ast.Private)
 
 					// feed all properties
@@ -73,11 +77,12 @@ func (n *Error) TypeDecl() *ast.Macro {
 							ast.NewField(property.goFieldName(), property.decl.Clone()).SetComment(property.comment).SetVisibility(ast.Private),
 						)
 
-						// public property getter
+						// public property getter for struct
+						doc := "...returns the value of " + property.name + ".\n" + golang.DeEllipsis(golang.MakePublic(property.name), property.comment)
 						typ.AddMethods(
 							ast.NewFunc(
 								golang.MakePublic(property.goFieldName())).
-								SetComment("...returns the value of " + property.name + ".\n" + golang.DeEllipsis(golang.MakePublic(property.name), property.comment)).
+								SetComment(doc).
 								SetRecName("e").
 								AddResults(ast.NewParam("", property.decl.Clone())).
 								SetBody(
@@ -85,33 +90,54 @@ func (n *Error) TypeDecl() *ast.Macro {
 										ast.NewTpl("return e." + property.goFieldName()),
 									),
 								),
-
 						)
+
+						// public property getter for interface
+						contract.AddMethods(
+							ast.NewFunc(
+								golang.MakePublic(property.goFieldName())).
+								SetComment(doc).
+								AddResults(ast.NewParam("", property.decl.Clone())),
+						)
+
 					}
 
 					// insert group marker method
+					doc := "...returns true, if the error belongs to the sum type of " + n.GroupName + "."
 					typ.AddMethods(
 						ast.NewFunc(goErrorMarkerMethod(n.GroupName)).
-							SetComment("...marks this type to belong to the sum type of " + n.GroupName + ".\nThis implementation always returns true.").
+							SetComment(doc + "\nThis implementation always returns true.").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))).
 							SetBody(ast.NewBlock(ast.NewReturnStmt(ast.NewIdentLit("true")))),
+					)
 
+					contract.AddMethods(
+						ast.NewFunc(goErrorMarkerMethod(n.GroupName)).
+							SetComment(doc).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))),
 					)
 
 					// insert case marker method
+					doc = "...returns true, if it represents " + grammarAOrAn(errorCase.TypeName) + " case."
 					typ.AddMethods(
 						ast.NewFunc(goErrorMarkerMethod(errorCase.TypeName)).
-							SetComment("...returns true, if it represents " + grammarAOrAn(errorCase.TypeName) + " case.\nThis implementation always returns true.").
+							SetComment(doc + "\nThis implementation always returns true.").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))).
 							SetBody(ast.NewBlock(ast.NewReturnStmt(ast.NewIdentLit("true")))),
+					)
 
+					contract.AddMethods(
+						ast.NewFunc(goErrorMarkerMethod(errorCase.TypeName)).
+							SetComment(doc).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))),
 					)
 
 					// always provide an unwrap
+					doc = "...unpacks the cause or returns nil."
 					typ.AddFields(ast.NewField("cause", ast.NewSimpleTypeDecl("error")).SetComment("...refers to a causing error or nil.").SetVisibility(ast.Private))
 					typ.AddMethods(
 						ast.NewFunc("Unwrap").
-							SetComment("...unpacks the cause or returns nil.").
+							SetComment(doc).
 							SetRecName("e").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("error"))).
 							SetBody(
@@ -119,6 +145,12 @@ func (n *Error) TypeDecl() *ast.Macro {
 									ast.NewTpl("return e.cause"),
 								),
 							),
+					)
+
+					contract.AddMethods(
+						ast.NewFunc("Unwrap").
+							SetComment(doc).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("error"))),
 					)
 
 					// always provide an error method
@@ -137,9 +169,10 @@ func (n *Error) TypeDecl() *ast.Macro {
 						errRetFmt += "\", " + args + ")"
 					}
 
+					doc = "...returns the conventional description of this error."
 					typ.AddMethods(
 						ast.NewFunc("Error").
-							SetComment("...returns the conventional description of this error.").
+							SetComment(doc).
 							SetRecName("e").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("string"))).
 							SetBody(
@@ -149,7 +182,13 @@ func (n *Error) TypeDecl() *ast.Macro {
 							),
 					)
 
-					res = append(res, typ)
+					contract.AddMethods(
+						ast.NewFunc("Error").
+							SetComment(doc).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("string"))),
+					)
+
+					res = append(res, contract, typ)
 				}
 
 				return res
