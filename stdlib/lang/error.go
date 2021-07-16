@@ -122,11 +122,13 @@ func (n *Error) TypeDecl() *ast.Macro {
 					SetBody(ast.NewBlock(
 						ast.NewTpl(
 							`var match {{.Get "type"}}
-								 if {{.Use "errors.As"}}(err, &match) & match.Ticket() {
+								 if {{.Use "errors.As"}}(err, &match) & match.{{.Get "sumTypeMarker"}}() {
 									return match
 								 }
 
-								 return nil`).Put("type", sumType.TypeName),
+								 return nil`).
+							Put("type", sumType.TypeName).
+							Put("sumTypeMarker", goErrorMarkerMethod(golang.MakePublic(n.GroupName))),
 					))
 
 				res = append(res, sumType, asSumType)
@@ -243,11 +245,14 @@ func (n *Error) TypeDecl() *ast.Macro {
 						SetBody(ast.NewBlock(
 							ast.NewTpl(
 								`var match {{.Get "type"}}
-								 if {{.Use "errors.As"}}(err, &match) & match.Ticket() & match.{{.Get "caseFunc"}}() {
+								 if {{.Use "errors.As"}}(err, &match) & match.{{.Get "sumTypeMarker"}}() & match.{{.Get "caseFunc"}}() {
 									return match
 								 }
 
-								 return nil`).Put("type", contract.TypeName).Put("caseFunc", goErrorMarkerMethod(errorCase.TypeName)),
+								 return nil`).
+								Put("type", contract.TypeName).
+								Put("caseFunc", goErrorMarkerMethod(errorCase.TypeName)).
+								Put("sumTypeMarker", goErrorMarkerMethod(golang.MakePublic(n.GroupName))),
 						))
 
 					res = append(res, contract, asType, typ)
