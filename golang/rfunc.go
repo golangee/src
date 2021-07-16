@@ -12,6 +12,11 @@ import (
 // on the actual parent, which is either an ast.File, ast.Struct or ast.Interface. The keyword func is not
 // rendered here, because we renderFunc also for type declarations.
 func (r *Renderer) renderFunc(node *ast.Func, w *render.BufferedWriter) error {
+	funComment := r.renderFuncComment(node)
+	if funComment != "" {
+		r.writeComment(w, false, node.Identifier(), funComment)
+	}
+
 	var structNode *ast.Struct
 	switch t := node.Parent().(type) {
 	case *ast.Struct:
@@ -25,8 +30,10 @@ func (r *Renderer) renderFunc(node *ast.Func, w *render.BufferedWriter) error {
 			recName += "*"
 		}
 
-		w.Printf("(%s %s) ", recName, t.Identifier())
-	case *ast.File:
+		w.Printf("func (%s %s) ", recName, t.Identifier())
+	case *ast.Interface:
+
+	default:
 		w.Printf("func ")
 	}
 

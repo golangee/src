@@ -29,11 +29,6 @@ func (r *Renderer) renderFile(file *ast.File) ([]byte, error) {
 	for _, node := range file.Nodes {
 		switch t := node.(type) {
 		case *ast.Func:
-			funComment := r.renderFuncComment(t)
-			if funComment != "" {
-				r.writeComment(tmp, false, t.Identifier(), funComment)
-			}
-
 			if err := r.renderFunc(t, tmp); err != nil {
 				return nil, err
 			}

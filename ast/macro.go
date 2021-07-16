@@ -3,6 +3,7 @@ package ast
 // A Macro provides a dynamic amount of children and does not cause emitted source itself. It can be used
 // to emit generator specific nodes at calling time based on the current ast state (especially its parents).
 type Macro struct {
+	ID   string                // an arbitrary ID
 	Func func(m *Macro) []Node // Func should always return a new defensive copy with shared Node instances.
 	// if true, the result of Func is ever evaluated once. This improves performance but also makes stateful macros
 	// easier to implement when called multiple times. However, when rendering for multiple platforms, this may
@@ -18,6 +19,12 @@ func NewMacro() *Macro {
 
 func (n *Macro) exprNode() {
 
+}
+
+func (n *Macro) SetID(id string) *Macro {
+	n.ID = id
+
+	return n
 }
 
 // Invalidate purges any node cache.

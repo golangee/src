@@ -96,3 +96,4 @@ func ForEach(parent Node, f func(n Node) error) error {
 
 	return nil
 }
+

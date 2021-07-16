@@ -64,7 +64,7 @@ func (s *Struct) SetStatic(static bool) *Struct {
 	return s
 }
 
-// Name returns the declared identifier which must be unique per package.
+// Identifier returns the declared identifier which must be unique per package.
 func (s *Struct) Identifier() string {
 	return s.TypeName
 }
@@ -156,7 +156,7 @@ func (s *Struct) AddNamedTypes(t ...NamedType) *Struct {
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 // FactoryRefs are not considered children, to avoid recursive loops in the AST.
 func (s *Struct) Children() []Node {
-	tmp := make([]Node, 0, len(s.TypeFields)+len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types))
+	tmp := make([]Node, 0, len(s.TypeFields)+len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types)+len(s.Embedded))
 	for _, param := range s.TypeAnnotations {
 		tmp = append(tmp, param)
 	}
@@ -171,6 +171,10 @@ func (s *Struct) Children() []Node {
 
 	for _, namedType := range s.Types {
 		tmp = append(tmp, namedType)
+	}
+
+	for _, e := range s.Embedded {
+		tmp = append(tmp, e)
 	}
 
 	return tmp

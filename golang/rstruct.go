@@ -44,12 +44,6 @@ func (r *Renderer) renderStruct(node *ast.Struct, w *render.BufferedWriter) erro
 	w.Printf("}\n")
 
 	for _, fun := range node.Methods() {
-		funComment := r.renderFuncComment(fun)
-		if funComment != "" {
-			r.writeComment(w, false, fun.Identifier(), funComment)
-		}
-
-		w.Printf("func ")
 		if err := r.renderFunc(fun, w); err != nil {
 			return fmt.Errorf("cannot render func '%s': %w", fun.Identifier(), err)
 		}

@@ -30,10 +30,6 @@ func (r *Renderer) renderInterface(node *ast.Interface, w *render.BufferedWriter
 
 	for _, fun := range node.Methods() {
 		funComment := r.renderFuncComment(fun)
-		if funComment != "" {
-			r.writeComment(w, false, fun.Identifier(), funComment)
-		}
-
 		if err := r.renderFunc(fun, w); err != nil {
 			return fmt.Errorf("cannot render func '%s': %w", fun.Identifier(), err)
 		}
@@ -44,7 +40,13 @@ func (r *Renderer) renderInterface(node *ast.Interface, w *render.BufferedWriter
 		}
 	}
 
-	w.Printf("}\n")
+	for _, decl := range node.Embedded {
+		if err := r.renderTypeDecl(decl, w); err != nil {
+			return fmt.Errorf("cannot render embedded decl '%s': %w", decl.String(), err)
+		}
+	}
+
+	w.Printf("\n}\n")
 
 	return nil
 }

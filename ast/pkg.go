@@ -1,6 +1,8 @@
 package ast
 
-import "strings"
+import (
+	"strings"
+)
 
 // A Pkg represents a package and contains compilation units (source code files). Its position relates the local
 // physical folder.
@@ -36,6 +38,16 @@ func NewPkg(path string) *Pkg {
 		Path: path,
 		Name: names[len(names)-1],
 	}
+}
+
+// PkgFrom returns nil or the parent package. Note that packages are not nested.
+func PkgFrom(n Node) *Pkg {
+	pkg := &Pkg{}
+	if ok := ParentAs(n, &pkg); ok {
+		return pkg
+	}
+
+	return nil
 }
 
 // Interfaces returns a defensive copy of all found interfaces.

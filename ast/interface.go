@@ -11,6 +11,7 @@ type Interface struct {
 	TypeMethods     []*Func
 	TypeAnnotations []*Annotation
 	Types           []NamedType // only valid for language which can declare named nested type like java
+	Embedded        []TypeDecl  // Embedded is only valid for languages which supports composition at a language level
 	Obj
 }
 
@@ -41,6 +42,17 @@ func (s *Interface) SetName(name string) *Interface {
 
 func (s *Interface) sealedNamedType() {
 	panic("implement me")
+}
+
+func (s *Interface) AddEmbedded(t ...TypeDecl) *Interface {
+	for _, decl := range t {
+		assertNotAttached(decl)
+		assertSettableParent(decl).SetParent(s)
+
+		s.Embedded = append(s.Embedded, decl)
+	}
+
+	return s
 }
 
 // SetVisibility sets the visibility. The default is Public.
@@ -87,7 +99,7 @@ func (s *Interface) AddAnnotations(a ...*Annotation) *Interface {
 	return s
 }
 
-// AddTypes adds a bunch of named types. This is only allowed in Java and other renderers should
+// AddNamedTypes adds a bunch of named types. This is only allowed in Java and other renderers should
 // either ignore it or place them at the package level (Go).
 func (s *Interface) AddNamedTypes(types ...NamedType) *Interface {
 	for _, namedType := range types {
@@ -99,14 +111,14 @@ func (s *Interface) AddNamedTypes(types ...NamedType) *Interface {
 	return s
 }
 
-// Types returns the backing slice of defined named types.
+// NamedTypes returns the backing slice of defined named types.
 func (s *Interface) NamedTypes() []NamedType {
 	return s.Types
 }
 
 // Children returns a defensive copy of the underlying slice. However the Node references are shared.
 func (s *Interface) Children() []Node {
-	tmp := make([]Node, 0, +len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types))
+	tmp := make([]Node, 0, +len(s.TypeAnnotations)+len(s.TypeMethods)+len(s.Types)+len(s.Embedded))
 	for _, param := range s.TypeAnnotations {
 		tmp = append(tmp, param)
 	}
@@ -117,6 +129,10 @@ func (s *Interface) Children() []Node {
 
 	for _, namedType := range s.Types {
 		tmp = append(tmp, namedType)
+	}
+
+	for _, e := range s.Embedded {
+		tmp = append(tmp, e)
 	}
 
 	return tmp

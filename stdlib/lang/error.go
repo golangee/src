@@ -16,8 +16,9 @@ import (
 //   https://dave.cheney.net/2014/12/24/inspecting-errors.
 //   Creates private structs each implementing the error interface and methods named after GroupName and each ErrorCase.
 //
-//   In https://blog.golang.org/error-handling-and-go can also be seen, that the "Is" prefix is omitted (just as a "Get" prefix).
-//   Even verbose (and perhaps unidiomatic) we generate interface types for each error case. We do this only for documentation and reference purpose.
+//   In https://blog.golang.org/error-handling-and-go can also be seen, that the "Is" prefix is omitted (just as the "Get" prefix).
+//   Even more verbose (and perhaps unidiomatic), we generate interface types for each error case.
+//   We do this only for documentation and reference purpose.
 // Java:
 //   model as sealed class or (checked) exception?
 //
@@ -27,10 +28,36 @@ type Error struct {
 	Comment   string
 }
 
+type secretValueErrorKey string
+
 func NewError(groupName string) *Error {
 	return &Error{
 		GroupName: groupName,
 	}
+}
+
+// FindError searches in the package of p for an Error group macro with the given name and returns it or nil.
+func FindError(p ast.Node, groupName string) *Error {
+	pkg := ast.PkgFrom(p)
+	if pkg == nil {
+		return nil
+	}
+
+	key := secretValueErrorKey("error-macro-" + groupName)
+
+	for _, file := range pkg.PkgFiles {
+		for _, node := range file.Nodes {
+			if macro, ok := node.(*ast.Macro); ok {
+				if macro.ID == string(key) {
+					if e, ok := macro.Value(key).(*Error); ok {
+						return e
+					}
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (n *Error) GetComment() string {
@@ -56,16 +83,58 @@ func (n *Error) AddCase(cases ...*ErrorCase) *Error {
 	return n
 }
 
+func (n *Error) ID() string {
+	return "error-macro-" + n.GroupName
+}
+
 // TypeDecl creates a macro to declare the according concrete sealed or sum type(s).
 func (n *Error) TypeDecl() *ast.Macro {
-	return ast.NewMacro().SetMatchers(
+	m := ast.NewMacro().SetID(n.ID()).SetMatchers(
 		ast.MatchTargetLanguageWithContext(ast.LangGo,
 			func(m *ast.Macro) []ast.Node {
 				var res []ast.Node
 
+				docSumType := "...returns true, if the error belongs to the sum type of " + n.GroupName + "."
+				docUnwrap := "...unpacks the cause or returns nil."
+				docErr := "...returns the conventional description of this error."
+
+				sumType := ast.NewInterface(golang.MakePublic(n.GroupName)+"Error").
+					SetComment("...represents the sum type behavior of all "+n.GroupName+" errors.").
+					AddMethods(
+						ast.NewFunc(goErrorMarkerMethod(golang.MakePublic(n.GroupName))).
+							SetComment(docSumType).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))),
+
+
+						ast.NewFunc("Unwrap").
+							SetComment(docUnwrap).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("error"))),
+
+						ast.NewFunc("Error").
+							SetComment(docErr).
+							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("string"))),
+					)
+
+				asSumType := ast.NewFunc("As" + sumType.TypeName).
+					SetComment("...finds the first error in err's chain that matches any " + sumType.TypeName + " behavior.\nReturns nil if no such error is found.").
+					AddParams(ast.NewParam("err", ast.NewSimpleTypeDecl("error"))).
+					AddResults(ast.NewParam("", ast.NewSimpleTypeDecl(ast.Name(sumType.TypeName)))).
+					SetBody(ast.NewBlock(
+						ast.NewTpl(
+							`var match {{.Get "type"}}
+								 if {{.Use "errors.As"}}(err, &match) & match.Ticket() {
+									return match
+								 }
+
+								 return nil`).Put("type", sumType.TypeName),
+					))
+
+				res = append(res, sumType, asSumType)
+
 				for _, errorCase := range n.Cases {
 					contract := ast.NewInterface(golang.MakePublic(errorCase.goStructTypeName())).
-						SetComment(errorCase.Comment)
+						SetComment(errorCase.Comment).
+						AddEmbedded(ast.NewSimpleTypeDecl(ast.Name(sumType.TypeName)))
 
 					typ := ast.NewStruct(errorCase.goStructTypeName()).
 						SetComment(errorCase.Comment + "\n" + errorCase.goStructTypeName() + " is also " + grammarAOrAn(n.GroupName) + "Error.").
@@ -103,22 +172,15 @@ func (n *Error) TypeDecl() *ast.Macro {
 					}
 
 					// insert group marker method
-					doc := "...returns true, if the error belongs to the sum type of " + n.GroupName + "."
 					typ.AddMethods(
 						ast.NewFunc(goErrorMarkerMethod(n.GroupName)).
-							SetComment(doc + "\nThis implementation always returns true.").
+							SetComment(docSumType + "\nThis implementation always returns true.").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))).
 							SetBody(ast.NewBlock(ast.NewReturnStmt(ast.NewIdentLit("true")))),
 					)
 
-					contract.AddMethods(
-						ast.NewFunc(goErrorMarkerMethod(n.GroupName)).
-							SetComment(doc).
-							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("bool"))),
-					)
-
 					// insert case marker method
-					doc = "...returns true, if it represents " + grammarAOrAn(errorCase.TypeName) + " case."
+					doc := "...returns true, if it represents " + grammarAOrAn(errorCase.TypeName) + " case."
 					typ.AddMethods(
 						ast.NewFunc(goErrorMarkerMethod(errorCase.TypeName)).
 							SetComment(doc + "\nThis implementation always returns true.").
@@ -133,11 +195,10 @@ func (n *Error) TypeDecl() *ast.Macro {
 					)
 
 					// always provide an unwrap
-					doc = "...unpacks the cause or returns nil."
 					typ.AddFields(ast.NewField("cause", ast.NewSimpleTypeDecl("error")).SetComment("...refers to a causing error or nil.").SetVisibility(ast.Private))
 					typ.AddMethods(
 						ast.NewFunc("Unwrap").
-							SetComment(doc).
+							SetComment(docUnwrap).
 							SetRecName("e").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("error"))).
 							SetBody(
@@ -145,12 +206,6 @@ func (n *Error) TypeDecl() *ast.Macro {
 									ast.NewTpl("return e.cause"),
 								),
 							),
-					)
-
-					contract.AddMethods(
-						ast.NewFunc("Unwrap").
-							SetComment(doc).
-							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("error"))),
 					)
 
 					// always provide an error method
@@ -169,10 +224,9 @@ func (n *Error) TypeDecl() *ast.Macro {
 						errRetFmt += "\", " + args + ")"
 					}
 
-					doc = "...returns the conventional description of this error."
 					typ.AddMethods(
 						ast.NewFunc("Error").
-							SetComment(doc).
+							SetComment(docErr).
 							SetRecName("e").
 							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("string"))).
 							SetBody(
@@ -182,19 +236,31 @@ func (n *Error) TypeDecl() *ast.Macro {
 							),
 					)
 
-					contract.AddMethods(
-						ast.NewFunc("Error").
-							SetComment(doc).
-							AddResults(ast.NewParam("", ast.NewSimpleTypeDecl("string"))),
-					)
+					asType := ast.NewFunc("As" + contract.TypeName).
+						SetComment("...finds the first error in err's chain that matches any" + contract.TypeName + " behavior.\nReturns nil if no such error is found.").
+						AddParams(ast.NewParam("err", ast.NewSimpleTypeDecl("error"))).
+						AddResults(ast.NewParam("", ast.NewSimpleTypeDecl(ast.Name(contract.TypeName)))).
+						SetBody(ast.NewBlock(
+							ast.NewTpl(
+								`var match {{.Get "type"}}
+								 if {{.Use "errors.As"}}(err, &match) & match.Ticket() & match.{{.Get "caseFunc"}}() {
+									return match
+								 }
 
-					res = append(res, contract, typ)
+								 return nil`).Put("type", contract.TypeName).Put("caseFunc", goErrorMarkerMethod(errorCase.TypeName)),
+						))
+
+					res = append(res, contract, asType, typ)
 				}
 
 				return res
 			},
 		),
 	)
+
+	m.PutValue(secretValueErrorKey(n.ID()), n)
+
+	return m
 }
 
 // An ErrorCase declares a unique case of the enumeration.
@@ -342,6 +408,36 @@ func (n *ErrorCase) goFullInterface() *ast.Interface {
 	}
 
 	return iface
+}
+
+// ContractTypeName returns the (if attached otherwise not-) qualified name of this error type. Depending on the target, a different name (but
+// consistent to Error.TypeDecl) referring to an arbitrary type (e.g. interface or class) is returned. If p is not attached to a package,
+// just the local name is returned, otherwise a full qualified identifier within the context of p.
+func (n *ErrorCase) ContractTypeName(p ast.Node) ast.Name {
+	if n.Parent == nil {
+		return ast.Name(golang.MakePublic(n.goStructTypeName()))
+	}
+
+	var target ast.Target
+	mod := &ast.Mod{}
+	if ok := ast.ParentAs(p, &mod); ok {
+		target = mod.Target
+	}
+
+	var identifier string
+	switch target.Lang {
+	case ast.LangGo:
+		identifier = golang.MakePublic(n.goStructTypeName())
+	default:
+		panic("target lang not yet implemented: " + target.Lang)
+	}
+
+	pkg := &ast.Pkg{}
+	if ok := ast.ParentAs(p, &pkg); ok {
+		return ast.Name(pkg.Path + "." + identifier)
+	}
+
+	return ast.Name(identifier)
 }
 
 // goStructTypeName is like TicketNotFoundError
