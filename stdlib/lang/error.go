@@ -122,7 +122,7 @@ func (n *Error) TypeDecl() *ast.Macro {
 					SetBody(ast.NewBlock(
 						ast.NewTpl(
 							`var match {{.Get "type"}}
-								 if {{.Use "errors.As"}}(err, &match) & match.{{.Get "sumTypeMarker"}}() {
+								 if {{.Use "errors.As"}}(err, &match) && match.{{.Get "sumTypeMarker"}}() {
 									return match
 								 }
 
@@ -245,7 +245,7 @@ func (n *Error) TypeDecl() *ast.Macro {
 						SetBody(ast.NewBlock(
 							ast.NewTpl(
 								`var match {{.Get "type"}}
-								 if {{.Use "errors.As"}}(err, &match) & match.{{.Get "sumTypeMarker"}}() & match.{{.Get "caseFunc"}}() {
+								 if {{.Use "errors.As"}}(err, &match) && match.{{.Get "sumTypeMarker"}}() && match.{{.Get "caseFunc"}}() {
 									return match
 								 }
 
@@ -357,7 +357,7 @@ func (n *ErrorCase) Check(checkKind ErrorCheckKind, checkVarName, dstVarName str
 					if len(fun.FunResults) == 1 {
 						if sb, ok := fun.FunResults[0].ParamTypeDecl.(*ast.SimpleTypeDecl); ok {
 							if sb.Name() == "bool" {
-								conditionalType += ` & {{.Get "dst"}}.` + fun.FunName + "()"
+								conditionalType += ` && {{.Get "dst"}}.` + fun.FunName + "()"
 							}
 						}
 					}
